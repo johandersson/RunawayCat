@@ -39,6 +39,12 @@ När Miso når målet springer han fram till sitt nya hem, där hans kattfamilj 
 
 Spelets retromusik är “Level 1” från **5 Chiptunes (Action)** av Juhani Junkala / SubspaceAudio. Kattljudet är “Meow of a Siamese cat” av freemaster2. Båda är publicerade under CC0 1.0; fullständig information finns i `assets/music/LICENSE.md` och `assets/sounds/LICENSE.md`.
 
+## Licens
+
+Copyright © 2026 Johan Andersson.
+
+Spelets källkod är fri programvara licensierad under [GNU General Public License, version 3 eller senare](LICENSE). Tredjepartstillgångarna behåller sina respektive CC0-licenser enligt informationen ovan.
+
 ## Arkitektur
 
 Spelkoden är uppdelad i testbara klasser under `game/`:
