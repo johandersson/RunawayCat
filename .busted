@@ -1,0 +1,7 @@
+return {
+    default = {
+        pattern = "_spec%.lua$",
+        output = "utfTerminal",
+        verbose = true,
+    },
+}
