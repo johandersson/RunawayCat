@@ -1,70 +1,70 @@
-# Katten på rymmen
+# Runaway Cat
 
-Ett färgstarkt, asset-fritt 2D-plattformsspel för [LÖVE](https://love2d.org/) där katten Miso rymmer hemifrån0.
+A colorful 2D platform game for [LÖVE](https://love2d.org/) in which Miso the cat runs away from home.
 
-## Spela
+## Play
 
-1. Installera LÖVE 11.4 eller senare.
-2. Dra projektmappen till `love.exe`, eller kör följande i projektmappen:
+1. Install LÖVE 11.4 or later.
+2. Drag the project folder onto `love.exe`, or run the following command from the project folder:
 
    ```powershell
    love .
    ```
 
-## Kontroller
+## Controls
 
-- **Mellanslag**, **W**, **uppåtpil** eller **vänster musklick**: hoppa
-- Släpp hoppknappen tidigt för ett kortare hopp
-- **P** eller **Esc**: pausa/fortsätt
-- **R**: starta om efter vinst eller game over
+- **Space**, **W**, **up arrow**, or **left mouse button**: jump
+- Release the jump button early for a shorter jump
+- **P** or **Esc**: pause/resume
+- **R**: restart after winning or getting a game over
 
-## Målet
+## Objective
 
-Miso springer automatiskt. Hjälp honom över hål, taggar, lådor och stockar. Samla fisk, mjölk och tårta för poäng medan du tar dig genom Hemkvarteren, Viskskogen, Stora staden och Månbergen.
+Miso runs automatically. Help him clear holes, thorns, crates, and logs. Collect fish, milk, and cake for points while traveling through the Home Quarter, Whispering Forest, Big City, and Moon Mountains.
 
-Miso har tre liv per omgång. När han träffar ett hinder förlorar han ett liv och fortsätter från början av den aktuella miljön. Först efter den tredje träffen är omgången slut.
+Miso has three lives per run. When he hits an obstacle, he loses a life and resumes from the beginning of the current environment. The run ends after the third hit.
 
-Varje gång poängen passerar en ny 2 000-poängsgräns får Miso ett extraliv. Det innebär extraliv vid 2 000, 4 000, 6 000 poäng och så vidare.
+Miso gains an extra life whenever the score crosses a new 2,000-point threshold: 2,000, 4,000, 6,000 points, and so on.
 
-Svårigheten ökar stegvis:
+The difficulty increases gradually:
 
-- **Hemkvarteren** är en lugn introduktion med låg fart och inga hinder.
-- **Viskskogen** ökar farten och höjden på bonusplattformarna och introducerar ett litet hål.
-- **Stora staden** introducerar fler och bredare hål samt små lådor, taggar och stockar.
-- **Månbergen** har högst fart, flest hål, längst säkra hopp och flest små hinder.
+- **Home Quarter** is a gentle introduction with low speed and no obstacles.
+- **Whispering Forest** increases the speed and height of bonus platforms and introduces one small hole.
+- **Big City** introduces more and wider holes, along with small crates, thorns, and logs.
+- **Moon Mountains** has the highest speed, the most holes, the longest safe jumps, and the most small obstacles.
 
-All grafik, animation, nivådesign och alla ljudeffekter skapas direkt i Lua, så inga externa assets behövs.
+All graphics, animations, and level design are generated directly in Lua.
 
-När Miso når målet springer han fram till sitt nya hem, där hans kattfamilj väntar och samlas i en gruppkram innan resultatskärmen visas.
+When Miso reaches the finish line, he runs to his new home, where his cat family is waiting. They gather for a group hug before the results screen appears.
 
-Spelets retromusik är “Level 1” från **5 Chiptunes (Action)** av Juhani Junkala / SubspaceAudio. Kattljudet är “Meow of a Siamese cat” av freemaster2. Båda är publicerade under CC0 1.0; fullständig information finns i `assets/music/LICENSE.md` och `assets/sounds/LICENSE.md`.
+The retro music is “Level 1” from **5 Chiptunes (Action)** by Juhani Junkala / SubspaceAudio. The cat sound is “Meow of a Siamese cat” by freemaster2. Both are released under CC0 1.0; full details are available in [`assets/music/LICENSE.md`](assets/music/LICENSE.md) and [`assets/sounds/LICENSE.md`](assets/sounds/LICENSE.md).
 
-## Licens
+## License
 
 Copyright © 2026 Johan Andersson.
 
-Spelets källkod är fri programvara licensierad under [GNU General Public License, version 3 eller senare](LICENSE). Tredjepartstillgångarna behåller sina respektive CC0-licenser enligt informationen ovan.
+The game’s source code is free software licensed under the [GNU General Public License, version 3 or later](LICENSE). Third-party assets retain their respective CC0 licenses as described above.
 
-## Arkitektur
+## Architecture
 
-Spelkoden är uppdelad i testbara klasser under `game/`:
+The game code is organized into testable classes under `game/`:
 
-- `Player`, `Level`, `Difficulty` och `Zone` styr spelaren och progressionen.
-- `Platform`, `Hazard`, `Food` och `Particle` representerar spelobjekt.
-- `Class`, `Config` och `Util` innehåller gemensam infrastruktur.
-- `Cache` erbjuder funktionell memoization och `RenderCache` rasteriserar återanvänd grafik till canvas bara en gång.
-- Mat, hinder och huset använder canvas-cachen; retromusiken avkodas en gång och hålls i en memoiserad minnescache.
-- `App` äger spelets livscykel, tillstånd, rendering och input.
-- `main.lua` är en tunn startfil som enbart delegerar LÖVE-callbacks till `App`.
+- `Player`, `Level`, `Difficulty`, and `Zone` control the player and progression.
+- `Platform`, `Hazard`, `Food`, and `Particle` represent game objects.
+- `Class`, `Config`, and `Util` provide shared infrastructure.
+- `Cache` provides functional memoization, while `RenderCache` rasterizes reusable graphics to canvases only once.
+- Food, obstacles, and the house use the canvas cache; the retro music is decoded once and kept in a memoized memory cache.
+- `App` owns the game lifecycle, state, rendering, and input.
+- `main.lua` is a thin entry point that only delegates LÖVE callbacks to `App`.
 
-## Tester
+## Tests
 
-Projektet använder Busted 2.3.0. Ramverket och dess beroenden installeras lokalt i `.luarocks/`.
+The project uses Busted 2.3.0. The framework and its dependencies are installed locally in `.luarocks/`.
 
-Kör hela testsviten:
+Run the full test suite:
 
 ```powershell
 .\scripts\test.ps1
 ```
 
-Testharnessen använder en isolerad LÖVE-mock och testar både applikationsstart, klassbeteenden, kollisioner, poäng och den progressiva svårighetskurvan.
+The test harness uses an isolated LÖVE mock and covers application startup, class behavior, collisions, scoring, and the progressive difficulty curve.
