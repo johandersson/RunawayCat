@@ -1,6 +1,6 @@
 # Runaway Cat
 
-A colorful 2D platform game for [LÖVE](https://love2d.org/) in which Miso the cat runs away from home.
+A colorful 2D platform game for [LÖVE](https://love2d.org/) in which Miso the cat runs away from home. Texts in the game is currently only in Swedish.
 
 ## Play
 
