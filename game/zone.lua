@@ -47,9 +47,23 @@ local definitions = {
     },
 }
 
-function Zone.defaults()
+local indoorDefinitions = {
+    { name = "Jättehallen", room = "hall", skyTop = { 0.33, 0.24, 0.35 }, skyBottom = { 0.86, 0.67, 0.53 },
+        ground = { 0.68, 0.40, 0.24 }, dirt = { 0.39, 0.24, 0.18 }, accent = { 1.0, 0.76, 0.37 } },
+    { name = "Köksriket", room = "kitchen", skyTop = { 0.22, 0.44, 0.47 }, skyBottom = { 0.82, 0.91, 0.78 },
+        ground = { 0.60, 0.73, 0.72 }, dirt = { 0.27, 0.40, 0.42 }, accent = { 0.98, 0.64, 0.34 } },
+    { name = "Bokdjungeln", room = "library", skyTop = { 0.26, 0.18, 0.32 }, skyBottom = { 0.66, 0.46, 0.38 },
+        ground = { 0.52, 0.31, 0.23 }, dirt = { 0.29, 0.18, 0.16 }, accent = { 0.77, 0.92, 0.45 } },
+    { name = "Tvättlabyrinten", room = "laundry", skyTop = { 0.27, 0.35, 0.59 }, skyBottom = { 0.75, 0.82, 0.96 },
+        ground = { 0.47, 0.53, 0.71 }, dirt = { 0.24, 0.29, 0.45 }, accent = { 0.91, 0.69, 1.0 } },
+    { name = "Vindens skattkammare", room = "attic", skyTop = { 0.15, 0.14, 0.25 }, skyBottom = { 0.61, 0.42, 0.35 },
+        ground = { 0.53, 0.39, 0.30 }, dirt = { 0.27, 0.22, 0.21 }, accent = { 1.0, 0.84, 0.45 } },
+}
+
+function Zone.defaults(levelIndex)
     local zones = {}
-    for _, definition in ipairs(definitions) do
+    local source = levelIndex == 2 and indoorDefinitions or definitions
+    for i, definition in ipairs(source) do
         local copy = {}
         for key, value in pairs(definition) do
             if type(value) == "table" then
@@ -58,6 +72,7 @@ function Zone.defaults()
                 copy[key] = value
             end
         end
+        copy.startX = (i - 1) * 2800
         table.insert(zones, Zone:new(copy))
     end
     return zones

@@ -8,10 +8,13 @@ local Zone = require("game.zone")
 
 local Level = Class:extend()
 
-function Level:init(random)
+function Level:init(random, index)
     self.random = random or math.random
-    self.finishX = Config.levelEnd
-    self.zones = Zone.defaults()
+    self.index = index or 1
+    self.zones = Zone.defaults(self.index)
+    self.sectionCount = #self.zones * 4
+    self.finishX = (self.sectionCount + 1) * Config.sectionWidth
+    self.homeX = self.finishX + 550
     self.platforms = {}
     self.hazards = {}
     self.foods = {}
@@ -19,7 +22,7 @@ function Level:init(random)
 end
 
 function Level:getDifficulty(zoneIndex)
-    return Difficulty.forZone(zoneIndex)
+    return Difficulty.forZone(zoneIndex, self.index)
 end
 
 function Level:addPlatform(x, y, width, height)
@@ -48,10 +51,10 @@ end
 
 function Level:addSection(section)
     local x = section * Config.sectionWidth
-    local zoneIndex = math.min(4, math.floor(x / Config.zoneWidth) + 1)
+    local zoneIndex = math.min(#self.zones, math.floor(x / Config.zoneWidth) + 1)
     local difficulty = self:getDifficulty(zoneIndex)
     local zoneSection = section % 4
-    local shouldAddGap = section < 16
+    local shouldAddGap = section < self.sectionCount
         and zoneSection > 0
         and zoneSection >= 4 - difficulty.gapCount
 
@@ -72,18 +75,27 @@ function Level:addSection(section)
         self:addFood(foodX, Config.groundY - 72 - height, foodIndex == 2 and "milk" or "fish")
     end
 
-    local shouldAddMainHazard = zoneIndex >= 3
-    if section > 0 and section < 16 and shouldAddMainHazard and not shouldAddGap then
+    local indoor = self.index == 2
+    local shouldAddMainHazard = indoor or zoneIndex >= 3
+    if section < self.sectionCount and shouldAddMainHazard and not shouldAddGap then
         local kinds = {
             { "crate", 36, 34 },
             { "thorns", 44, 18 },
             { "log", 45, 24 },
         }
-        local choice = kinds[((section + zoneIndex) % #kinds) + 1]
+        if indoor then
+            kinds = {
+                { "toy", 32, 27 }, { "spill", 44, 12 }, { "books", 38, 32 },
+                { "basket", 40, 34 }, { "mousetrap", 40, 16 },
+            }
+        end
+        local choice = kinds[indoor and zoneIndex or ((section + zoneIndex) % #kinds) + 1]
         self:addHazard(x + 405, Config.groundY - choice[3], choice[2], choice[3], choice[1])
     end
 
-    if zoneIndex >= 3 and section % 2 == 0 then
+    if indoor and section < self.sectionCount and zoneSection >= 5 - zoneIndex then
+        self:addHazard(x + 92, Config.groundY - 22, 32, 22, "toy")
+    elseif not indoor and zoneIndex >= 3 and section % 2 == 0 then
         self:addHazard(x + 92, Config.groundY - 18, 40, 18, "thorns")
     end
 
@@ -96,14 +108,14 @@ function Level:build()
     self.foods = {}
     self.gaps = {}
 
-    for section = 0, 16 do
+    for section = 0, self.sectionCount do
         self:addSection(section)
     end
 
-    self:addPlatform(11650, Config.groundY, Config.homeX + 300 - 11650)
-    self:addFood(11720, Config.groundY - 65, "cake")
-    self:addFood(11780, Config.groundY - 90, "milk")
-    self:addFood(11840, Config.groundY - 65, "cake")
+    self:addPlatform(self.finishX - 250, Config.groundY, self.homeX + 300 - (self.finishX - 250))
+    self:addFood(self.finishX - 180, Config.groundY - 65, "cake")
+    self:addFood(self.finishX - 120, Config.groundY - 90, "milk")
+    self:addFood(self.finishX - 60, Config.groundY - 65, "cake")
     return self
 end
 

@@ -2,6 +2,7 @@ local Class = require("game.class")
 local Cache = require("game.cache")
 local Config = require("game.config")
 local Homecoming = require("game.homecoming")
+local Interior = require("game.interior")
 local Level = require("game.level")
 local LifeCounter = require("game.life_counter")
 local MusicPlayer = require("game.music_player")
@@ -42,6 +43,7 @@ local lives = LifeCounter:new()
 local homecoming
 local music
 local renderCache
+local interior
 local assetCache = Cache:new()
 
 local zones = Zone.defaults()
@@ -93,26 +95,32 @@ local function addParticle(x, y, color, count, speed)
     end
 end
 
-local function resetGame()
+local function loadLevel(index)
     level = Level:new(function(...)
         return love.math.random(...)
-    end):build()
+    end, index):build()
+    LEVEL_END = level.finishX
+    HOME_X = level.homeX
     platforms = level.platforms
     hazards = level.hazards
     foods = level.foods
     zones = level.zones
-    lives:reset()
     homecoming = nil
     player = Player:new(105, GROUND_Y - 62)
     cameraX = 0
-    score = 0
     distance = 0
-    elapsed = 0
     particles = {}
     screenShake = 0
     flash = 0
-    message = "Spring, Miso, spring!"
+    message = index == 2 and "Bana 2: Äventyret i huset!" or "Spring, Miso, spring!"
     messageTimer = 2
+end
+
+local function resetGame()
+    loadLevel(1)
+    lives:reset()
+    score = 0
+    elapsed = 0
 end
 
 local function startGame()
@@ -168,6 +176,7 @@ function App:load()
     fonts.large = love.graphics.newFont(58)
     fonts.hero = love.graphics.newFont(82)
     renderCache = RenderCache:new(love.graphics)
+    interior = Interior:new(love.graphics, renderCache)
 
     sounds.jump = makeTone(430, 0.12, 0.22, "square")
     sounds.food = makeTone(760, 0.10, 0.18, "sine")
@@ -331,8 +340,25 @@ local function updateHomecoming(dt)
     end
 
     if homecoming:isFinished() then
-        state = "won"
+        if level.index == 1 then
+            loadLevel(2)
+            state = "playing"
+            player.invulnerable = 1.5
+            playSound("start")
+        else
+            state = "won"
+        end
     end
+end
+
+function App:getStatus()
+    return {
+        state = state,
+        levelIndex = level.index,
+        worldCount = #zones,
+        score = score,
+        lives = lives:remaining(),
+    }
 end
 
 function App:update(dt)
@@ -429,6 +455,10 @@ local function drawMountainScenery(parallax)
 end
 
 local function drawBackground(zoneIndex)
+    if level.index == 2 then
+        interior:draw(zones[zoneIndex].room, cameraX)
+        return
+    end
     if zoneIndex == 4 then
         love.graphics.setColor(0.92, 0.91, 0.74, 0.88)
         love.graphics.circle("fill", 1040, 135, 67)
@@ -539,6 +569,41 @@ local function renderHazardSprite(hazard)
         love.graphics.circle("fill", hazard.w - 4, hazard.h / 2 + 3, 16)
         love.graphics.setColor(0.30, 0.17, 0.10)
         love.graphics.circle("line", hazard.w - 4, hazard.h / 2 + 3, 8)
+    elseif hazard.kind == "toy" then
+        love.graphics.setColor(0.94, 0.48, 0.63)
+        love.graphics.ellipse("fill", hazard.w / 2, hazard.h / 2, hazard.w / 2, hazard.h / 2)
+        love.graphics.setColor(1.0, 0.87, 0.52)
+        love.graphics.setLineWidth(2)
+        love.graphics.arc("line", "open", hazard.w / 2, hazard.h / 2, hazard.h / 3, -2, 2)
+    elseif hazard.kind == "spill" then
+        love.graphics.setColor(0.30, 0.77, 0.91)
+        love.graphics.ellipse("fill", hazard.w / 2, hazard.h / 2, hazard.w / 2, hazard.h / 2)
+        love.graphics.setColor(0.87, 0.97, 1.0)
+        love.graphics.ellipse("fill", hazard.w / 3, hazard.h / 3, 7, 2)
+    elseif hazard.kind == "books" then
+        for i = 0, 2 do
+            love.graphics.setColor(0.65 - i * 0.13, 0.37 + i * 0.14, 0.55)
+            love.graphics.rectangle("fill", i % 2 * 3, hazard.h - (i + 1) * 10, hazard.w - 3, 9, 2, 2)
+            love.graphics.setColor(0.98, 0.89, 0.70)
+            love.graphics.rectangle("fill", 5 + i % 2 * 3, hazard.h - (i + 1) * 10 + 3, hazard.w - 12, 3)
+        end
+    elseif hazard.kind == "basket" then
+        love.graphics.setColor(0.74, 0.54, 0.30)
+        love.graphics.rectangle("fill", 0, 5, hazard.w, hazard.h - 5, 5, 5)
+        love.graphics.setColor(0.94, 0.78, 0.49)
+        love.graphics.setLineWidth(2)
+        for x = 6, hazard.w - 4, 8 do
+            love.graphics.line(x, 7, x, hazard.h - 2)
+        end
+        love.graphics.rectangle("fill", 0, 2, hazard.w, 6, 3, 3)
+    elseif hazard.kind == "mousetrap" then
+        love.graphics.setColor(0.71, 0.46, 0.24)
+        love.graphics.rectangle("fill", 0, hazard.h - 6, hazard.w, 6, 2, 2)
+        love.graphics.setColor(0.80, 0.85, 0.92)
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", 5, 1, hazard.w - 10, hazard.h - 5, 2, 2)
+        love.graphics.setColor(1.0, 0.81, 0.28)
+        love.graphics.polygon("fill", 16, 7, 27, 7, 21, 0)
     end
 end
 
@@ -724,7 +789,7 @@ local function drawHUD(zone)
 
     love.graphics.setFont(fonts.small)
     love.graphics.setColor(1, 1, 1, 0.88)
-    love.graphics.printf(zone.name, GAME_WIDTH - 355, 72, 315, "right")
+    love.graphics.printf("Bana " .. level.index .. " · " .. zone.name, GAME_WIDTH - 510, 72, 470, "right")
 end
 
 local function drawOverlay(title, subtitle, prompt, color)
@@ -810,7 +875,7 @@ local function drawGame()
     elseif state == "won" then
         drawOverlay(
             "HEMMA!",
-            "Miso är trygg hemma hos sin kattfamilj!\nSlutpoäng: " .. score,
+            "Miso klarade båda äventyren och är hemma hos familjen!\nSlutpoäng: " .. score,
             "Tryck R, Enter eller Mellanslag för att springa igen",
             { 1.0, 0.84, 0.27 }
         )

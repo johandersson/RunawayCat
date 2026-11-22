@@ -35,7 +35,15 @@ The difficulty increases gradually:
 
 All graphics, animations, and level design are generated directly in Lua.
 
-When Miso reaches the finish line, he runs to his new home, where his cat family is waiting. They gather for a group hug before the results screen appears.
+When Miso reaches the outdoor finish line, he runs to his home and reunites with his family. He then enters **Level 2: Inside Miso's Home**, a much larger-than-life indoor adventure with five worlds:
+
+1. **Giant Hall (Jättehallen)** — towering furniture, benches, shoes, and scattered yarn toys.
+2. **Kitchen Kingdom (Köksriket)** — enormous cupboards, appliances, and slippery spills.
+3. **Book Jungle (Bokdjungeln)** — giant bookshelves and stacks of fallen books.
+4. **Laundry Labyrinth (Tvättlabyrinten)** — oversized washing machines, laundry baskets, and more scattered toys.
+5. **Attic Treasure Room (Vindens skattkammare)** — roof beams, storage boxes, and mousetraps.
+
+Indoor floors have no holes. The speed rises gradually from 450 to 500, household hazards remain small, and bonus platforms stay within Miso's jump height. Score, remaining lives, extra-life thresholds, and music carry over from Level 1. Each indoor world has a safe respawn point. After finishing Level 2, Miso has a final family hug and the results screen appears. Restarting begins a fresh run at Level 1.
 
 The retro music is “Level 1” from **5 Chiptunes (Action)** by Juhani Junkala / SubspaceAudio. The cat sound is “Meow of a Siamese cat” by freemaster2. Both are released under CC0 1.0; full details are available in [`assets/music/LICENSE.md`](assets/music/LICENSE.md) and [`assets/sounds/LICENSE.md`](assets/sounds/LICENSE.md).
 
@@ -50,6 +58,7 @@ The game’s source code is free software licensed under the [GNU General Public
 The game code is organized into testable classes under `game/`:
 
 - `Player`, `Level`, `Difficulty`, and `Zone` control the player and progression.
+- Both levels reuse the same generator and gameplay; `Interior` draws five cached indoor scenery panels.
 - `Platform`, `Hazard`, `Food`, and `Particle` represent game objects.
 - `Class`, `Config`, and `Util` provide shared infrastructure.
 - `Cache` provides functional memoization, while `RenderCache` rasterizes reusable graphics to canvases only once.

@@ -38,15 +38,25 @@ local settings = {
     },
 }
 
-function Difficulty:init(zoneIndex)
+local indoorSettings = {
+    { startSpeed = 450, endSpeed = 458, hazardsPerSection = 1, platformRise = 100, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 460, endSpeed = 468, hazardsPerSection = 1.25, platformRise = 106, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 470, endSpeed = 478, hazardsPerSection = 1.5, platformRise = 112, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 480, endSpeed = 488, hazardsPerSection = 1.75, platformRise = 118, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 490, endSpeed = 500, hazardsPerSection = 2, platformRise = 124, gapCount = 0, gapWidth = 0 },
+}
+
+function Difficulty:init(zoneIndex, levelIndex)
     self.zoneIndex = zoneIndex
-    for key, value in pairs(settings[zoneIndex]) do
+    local source = levelIndex == 2 and indoorSettings or settings
+    for key, value in pairs(source[zoneIndex]) do
         self[key] = value
     end
 end
 
-function Difficulty.forZone(zoneIndex)
-    return Difficulty:new(math.max(1, math.min(4, zoneIndex)))
+function Difficulty.forZone(zoneIndex, levelIndex)
+    local worldCount = levelIndex == 2 and 5 or 4
+    return Difficulty:new(math.max(1, math.min(worldCount, zoneIndex)), levelIndex)
 end
 
 function Difficulty:speedAt(x)
