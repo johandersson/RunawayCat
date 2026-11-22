@@ -1,6 +1,7 @@
 local Class = require("game.class")
 local Config = require("game.config")
 local Difficulty = require("game.difficulty")
+local Dog = require("game.dog")
 local Food = require("game.food")
 local Hazard = require("game.hazard")
 local Platform = require("game.platform")
@@ -19,6 +20,7 @@ function Level:init(random, index)
     self.hazards = {}
     self.foods = {}
     self.gaps = {}
+    self.dog = false
 end
 
 function Level:getDifficulty(zoneIndex)
@@ -76,7 +78,8 @@ function Level:addSection(section)
     end
 
     local indoor = self.index == 2
-    local shouldAddMainHazard = indoor or zoneIndex >= 3
+    local shouldAddMainHazard = indoor and (zoneIndex >= 3 or zoneSection % 2 == 1)
+        or not indoor and zoneIndex >= 3
     if section < self.sectionCount and shouldAddMainHazard and not shouldAddGap then
         local kinds = {
             { "crate", 36, 34 },
@@ -93,7 +96,7 @@ function Level:addSection(section)
         self:addHazard(x + 405, Config.groundY - choice[3], choice[2], choice[3], choice[1])
     end
 
-    if indoor and section < self.sectionCount and zoneSection >= 5 - zoneIndex then
+    if indoor and zoneIndex >= 4 and section < self.sectionCount and zoneSection >= 7 - zoneIndex then
         self:addHazard(x + 92, Config.groundY - 22, 32, 22, "toy")
     elseif not indoor and zoneIndex >= 3 and section % 2 == 0 then
         self:addHazard(x + 92, Config.groundY - 18, 40, 18, "thorns")
@@ -107,6 +110,7 @@ function Level:build()
     self.hazards = {}
     self.foods = {}
     self.gaps = {}
+    self.dog = false
 
     for section = 0, self.sectionCount do
         self:addSection(section)
@@ -116,6 +120,10 @@ function Level:build()
     self:addFood(self.finishX - 180, Config.groundY - 65, "cake")
     self:addFood(self.finishX - 120, Config.groundY - 90, "milk")
     self:addFood(self.finishX - 60, Config.groundY - 65, "cake")
+    if self.index == 2 then
+        self.dog = Dog:new(self.finishX - 220)
+        table.insert(self.hazards, self.dog)
+    end
     return self
 end
 

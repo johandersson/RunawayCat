@@ -106,6 +106,106 @@ describe("Two-level campaign", function()
         assert.is_false(indoor.playing)
         assert.is_true(outdoor.playing)
         assert.equals(1, outdoor.pitch)
-        assert.is_true(upvalue(App.update, "meow").source.volume < outdoor.volume)
+    end)
+
+    it("keeps the final result visible until restart or exit is chosen", function()
+        completeLevel(app)
+        completeLevel(app)
+        local status = app:getStatus()
+        assert.is_true(status.highScore >= status.score)
+        for _ = 1, 300 do app:update(1 / 60) end
+        app:keypressed("space")
+        app:keypressed("w")
+        app:mousepressed(10, 10, 1)
+        assert.equals("won", app:getStatus().state)
+        app:keypressed("right")
+        app:keypressed("return")
+        assert.is_true(love.event.quitRequested)
+    end)
+
+    it("loses a life when caught by the final dog and shows results on the last life", function()
+        completeLevel(app)
+        local lives = upvalue(App.update, "lives")
+        lives:lose()
+        lives:lose()
+        local level = upvalue(App.update, "level")
+        local player = upvalue(App.update, "player")
+        player.x = level.dog.x + 10
+        player.y = 590 - player.h
+        player.invulnerable = 0
+        app:update(1 / 60)
+        assert.equals("gameover", app:getStatus().state)
+        assert.equals(0, app:getStatus().lives)
+        app:keypressed("space")
+        assert.equals("gameover", app:getStatus().state)
+        app:keypressed("r")
+        assert.equals("playing", app:getStatus().state)
+    end)
+
+    it("uses letterboxed screen coordinates for explicit result buttons", function()
+        completeLevel(app)
+        completeLevel(app)
+        love.graphics.getDimensions = function() return 1000, 800 end
+        local scale = 1000 / 1280
+        local top = (800 - 720 * scale) / 2
+        app:mousepressed(450 * scale, 470 * scale + top, 1)
+        assert.equals("playing", app:getStatus().state)
+        assert.equals(1, app:getStatus().levelIndex)
+        assert.equals(3, app:getStatus().lives)
+        assert.equals(0, app:getStatus().score)
+    end)
+
+    it("does not confirm a result choice through a repeated held Enter key", function()
+        completeLevel(app)
+        completeLevel(app)
+        app:keypressed("return", "return", true)
+        assert.equals("won", app:getStatus().state)
+    end)
+
+    it("does not meow when collecting food even on the former lucky roll", function()
+        local source = upvalue(App.update, "meow").source
+        local before = source.plays
+        local player = upvalue(App.update, "player")
+        local level = upvalue(App.update, "level")
+        local fish
+        for _, food in ipairs(level.foods) do
+            if food.kind == "fish" then fish = food; break end
+        end
+        assert.is_not_nil(fish)
+        fish.x, fish.y = player.x + player.w / 2, player.y + player.h / 2
+        love.math.random = function() return 0 end
+        app:update(1 / 60)
+        assert.is_true(fish.collected)
+        assert.equals(before, source.plays)
+    end)
+
+    it("meows exactly once for each lost life, including the final life", function()
+        local source = upvalue(App.update, "meow").source
+        local before = source.plays
+        for lost = 1, 3 do
+            local player = upvalue(App.update, "player")
+            player.invulnerable = 0
+            player.y = 1000
+            app:update(1 / 60)
+            assert.equals(3 - lost, app:getStatus().lives)
+            assert.equals(before + lost, source.plays)
+        end
+        assert.equals("gameover", app:getStatus().state)
+        app:update(1 / 60)
+        assert.equals(before + 3, source.plays)
+    end)
+
+    it("does not meow on a collision while invulnerable", function()
+        completeLevel(app)
+        local source = upvalue(App.update, "meow").source
+        local before = source.plays
+        local level = upvalue(App.update, "level")
+        local player = upvalue(App.update, "player")
+        player.x = level.dog.x + 10
+        player.y = 590 - player.h
+        player.invulnerable = 1
+        app:update(1 / 60)
+        assert.equals(3, app:getStatus().lives)
+        assert.equals(before, source.plays)
     end)
 end)

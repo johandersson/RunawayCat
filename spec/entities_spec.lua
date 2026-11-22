@@ -14,21 +14,6 @@ describe("Game entities", function()
         assert.equals(0, cake:collect())
     end)
 
-    it("rarely meows when a fish is eaten", function()
-        local fish = Food:new(10, 20, "fish")
-        local milk = Food:new(10, 20, "milk")
-
-        assert.is_true(fish:shouldMeow(function()
-            return 0.029
-        end))
-        assert.is_false(fish:shouldMeow(function()
-            return 0.03
-        end))
-        assert.is_false(milk:shouldMeow(function()
-            return 0
-        end))
-    end)
-
     it("uses padded collision for hazards", function()
         local hazard = Hazard:new(100, 100, 40, 40, "crate")
 

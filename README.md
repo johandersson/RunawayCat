@@ -17,6 +17,8 @@ A colorful 2D platform game for [LÖVE](https://love2d.org/) in which Miso the c
 - Release the jump button early for a shorter jump
 - **P** or **Esc**: pause/resume
 - **R**: restart after winning or getting a game over
+- On the results dialog, click **Spela igen** (Restart) or **Avsluta** (Exit), or select with **left/right arrows** or **Tab** and confirm with **Enter**. **Esc** exits.
+- Jump keys and clicks outside the dialog buttons never restart a finished run.
 
 ## Objective
 
@@ -29,9 +31,11 @@ Miso gains an extra life whenever the score crosses a new 2,000-point threshold:
 The difficulty increases gradually:
 
 - **Home Quarter** is a gentle introduction with low speed and no obstacles.
-- **Whispering Forest** increases the speed and height of bonus platforms and introduces one small hole.
-- **Big City** introduces more and wider holes, along with small crates, thorns, and logs.
-- **Moon Mountains** has the highest speed, the most holes, the longest safe jumps, and the most small obstacles.
+- **Whispering Forest** increases the speed and height of bonus platforms, but still has no holes or hazards.
+- **Big City** introduces one small 65-pixel hole, along with small crates, thorns, and logs.
+- **Moon Mountains** has the highest outdoor speed and one 85-pixel hole, with slightly more small obstacles.
+
+Level 1 now ramps from 220 to 335 pixels per second, with lower bonus platforms and fewer, smaller holes.
 
 All graphics, animations, and level design are generated directly in Lua.
 
@@ -43,11 +47,15 @@ When Miso reaches the outdoor finish line, he runs to his home and reunites with
 4. **Laundry Labyrinth (Tvättlabyrinten)** — oversized washing machines, laundry baskets, and more scattered toys.
 5. **Attic Treasure Room (Vindens skattkammare)** — roof beams, storage boxes, and mousetraps.
 
-Indoor floors have no holes. The speed rises gradually from 450 to 500, household hazards remain small, and bonus platforms stay within Miso's jump height. Score, remaining lives, and extra-life thresholds carry over from Level 1. Each indoor world has a safe respawn point. After finishing Level 2, Miso has a final family hug and the results screen appears. Restarting begins a fresh run at Level 1.
+Indoor floors have no holes. The speed rises gradually from 260 to 440, comparable to the previous outdoor difficulty. Early rooms have fewer obstacles; the later rooms add more. Household hazards remain small, and bonus platforms stay within Miso's jump height. Score, remaining lives, and extra-life thresholds carry over from Level 1. Each indoor world has a safe respawn point.
+
+A barking dog guards the indoor finish. It lunges a short distance toward Miso, so jump over it to reach the family. Being caught costs a life, just like other hazards. Its graphic is cached and its quiet, cooldown-limited bark is generated in Lua without third-party assets.
+
+After finishing Level 2, Miso has a final family hug. Both victory and game-over show an encouraging dialog with the score and best score for the current game session. The game stays on this dialog until you explicitly choose Restart or Exit. Restarting begins a fresh run at Level 1.
 
 The outdoor retro music is “Level 1” from **5 Chiptunes (Action)** by Juhani Junkala / SubspaceAudio (CC0 1.0). The indoor music is “bgm_menu” from **8-bit Music Pack (Loopable)** by CodeManu on OpenGameArt (CC BY 3.0), played at 90% speed for a gentler feel. The music switches automatically on entering the house and switches back when restarting. Both tracks are cached in memory and loop.
 
-The cat sound is “Meow of a Siamese cat” by freemaster2 (CC0 1.0). It plays on only 3% of fish pickups, with at least 12 seconds between meows, at volume 0.10 versus the music's 0.28.
+The cat sound is “Meow of a Siamese cat” by freemaster2 (CC0 1.0). Miso meows only when losing a life, including the final life. It never plays on food pickups or protected collisions. The volume is 0.60 (six times the previous 0.10); music remains at 0.28. Every lost life triggers the meow, without randomness or a cooldown.
 
 Attribution and license details are included in [`assets/music/LICENSE.md`](assets/music/LICENSE.md) and [`assets/sounds/LICENSE.md`](assets/sounds/LICENSE.md). The indoor track's full CC BY 3.0 license is included in [`assets/music/CC-BY-3.0.txt`](assets/music/CC-BY-3.0.txt).
 
@@ -64,6 +72,7 @@ The game code is organized into testable classes under `game/`:
 - `Player`, `Level`, `Difficulty`, and `Zone` control the player and progression.
 - Both levels reuse the same generator and gameplay; `Interior` draws five cached indoor scenery panels.
 - `Platform`, `Hazard`, `Food`, and `Particle` represent game objects.
+- `Dog` extends the shared hazard collision behavior with a bounded lunge and bark cooldown; `ResultDialog` handles explicit end-of-run choices.
 - `Class`, `Config`, and `Util` provide shared infrastructure.
 - `Cache` provides functional memoization, while `RenderCache` rasterizes reusable graphics to canvases only once.
 - Food, obstacles, and the house use the canvas cache; the retro music is decoded once and kept in a memoized memory cache.

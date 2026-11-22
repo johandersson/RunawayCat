@@ -1,0 +1,23 @@
+local ResultDialog = require("game.result_dialog")
+
+describe("Explicit restart or exit dialog", function()
+    it("ignores gameplay jump keys and clicks outside the choices", function()
+        local dialog = ResultDialog:new()
+        assert.is_nil(dialog:keypressed("space"))
+        assert.is_nil(dialog:keypressed("w"))
+        assert.is_nil(dialog:mousepressed(0, 0))
+    end)
+
+    it("allows choosing exit with the keyboard", function()
+        local dialog = ResultDialog:new()
+        dialog:keypressed("right")
+        assert.equals("exit", dialog:keypressed("return"))
+    end)
+
+    it("restarts only through an explicit choice", function()
+        local dialog = ResultDialog:new()
+        assert.equals("restart", dialog:keypressed("r"))
+        assert.equals("restart", dialog:mousepressed(450, 470))
+        assert.equals("exit", dialog:mousepressed(750, 470))
+    end)
+end)

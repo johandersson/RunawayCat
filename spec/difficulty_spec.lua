@@ -1,0 +1,17 @@
+local Difficulty = require("game.difficulty")
+
+describe("Gentler campaign difficulty", function()
+    it("keeps the outdoor introduction slower with fewer smaller holes", function()
+        local first = Difficulty.forZone(1, 1)
+        local last = Difficulty.forZone(4, 1)
+        assert.is_true(first.startSpeed <= 220)
+        assert.is_true(last.endSpeed <= 340)
+        assert.equals(0, Difficulty.forZone(2, 1).gapCount)
+        assert.is_true(last.gapCount <= 1 and last.gapWidth <= 85)
+    end)
+
+    it("puts the indoor adventure in the old outdoor speed range", function()
+        assert.equals(260, Difficulty.forZone(1, 2).startSpeed)
+        assert.is_true(Difficulty.forZone(5, 2).endSpeed <= 450)
+    end)
+end)

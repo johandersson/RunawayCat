@@ -49,8 +49,7 @@ describe("Level difficulty progression", function()
             assert.is_true(gap.width <= 130)
         end
 
-        assert.same({ 0, 1, 2, 3 }, gapsByZone)
-        assert.is_true(widestByZone[2] < widestByZone[3])
+        assert.same({ 0, 0, 1, 1 }, gapsByZone)
         assert.is_true(widestByZone[3] < widestByZone[4])
     end)
 

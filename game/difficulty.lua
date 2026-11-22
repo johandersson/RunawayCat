@@ -5,45 +5,45 @@ local Difficulty = Class:extend()
 
 local settings = {
     {
-        startSpeed = 260,
-        endSpeed = 290,
+        startSpeed = 220,
+        endSpeed = 240,
+        hazardsPerSection = 0,
+        platformRise = 75,
+        gapCount = 0,
+        gapWidth = 0,
+    },
+    {
+        startSpeed = 250,
+        endSpeed = 270,
         hazardsPerSection = 0,
         platformRise = 90,
         gapCount = 0,
         gapWidth = 0,
     },
     {
-        startSpeed = 305,
-        endSpeed = 340,
-        hazardsPerSection = 0,
-        platformRise = 115,
-        gapCount = 1,
-        gapWidth = 90,
-    },
-    {
-        startSpeed = 350,
-        endSpeed = 390,
+        startSpeed = 280,
+        endSpeed = 300,
         hazardsPerSection = 1,
-        platformRise = 140,
-        gapCount = 2,
-        gapWidth = 110,
+        platformRise = 105,
+        gapCount = 1,
+        gapWidth = 65,
     },
     {
-        startSpeed = 400,
-        endSpeed = 450,
+        startSpeed = 310,
+        endSpeed = 335,
         hazardsPerSection = 1.5,
-        platformRise = 160,
-        gapCount = 3,
-        gapWidth = 130,
+        platformRise = 120,
+        gapCount = 1,
+        gapWidth = 85,
     },
 }
 
 local indoorSettings = {
-    { startSpeed = 450, endSpeed = 458, hazardsPerSection = 1, platformRise = 100, gapCount = 0, gapWidth = 0 },
-    { startSpeed = 460, endSpeed = 468, hazardsPerSection = 1.25, platformRise = 106, gapCount = 0, gapWidth = 0 },
-    { startSpeed = 470, endSpeed = 478, hazardsPerSection = 1.5, platformRise = 112, gapCount = 0, gapWidth = 0 },
-    { startSpeed = 480, endSpeed = 488, hazardsPerSection = 1.75, platformRise = 118, gapCount = 0, gapWidth = 0 },
-    { startSpeed = 490, endSpeed = 500, hazardsPerSection = 2, platformRise = 124, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 260, endSpeed = 290, hazardsPerSection = 0.5, platformRise = 90, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 305, endSpeed = 330, hazardsPerSection = 0.5, platformRise = 100, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 345, endSpeed = 370, hazardsPerSection = 1, platformRise = 110, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 380, endSpeed = 405, hazardsPerSection = 1.25, platformRise = 118, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 415, endSpeed = 440, hazardsPerSection = 1.5, platformRise = 124, gapCount = 0, gapWidth = 0 },
 }
 
 function Difficulty:init(zoneIndex, levelIndex)

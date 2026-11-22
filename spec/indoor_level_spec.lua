@@ -18,14 +18,16 @@ describe("Indoor level", function()
 
     it("uses increasingly difficult but jumpable indoor obstacles", function()
         local level = Level:new(nil, 2):build()
-        local allowed = { toy = true, spill = true, books = true, basket = true, mousetrap = true }
+        local allowed = { toy = true, spill = true, books = true, basket = true, mousetrap = true, dog = true }
         local counts = { 0, 0, 0, 0, 0 }
 
         for _, hazard in ipairs(level.hazards) do
             assert.is_true(allowed[hazard.kind])
-            assert.is_true(hazard.w <= 45 and hazard.h <= 36)
-            local world = math.floor(hazard.x / Config.zoneWidth) + 1
-            counts[world] = counts[world] + 1
+            if hazard.kind ~= "dog" then
+                assert.is_true(hazard.w <= 45 and hazard.h <= 36)
+                local world = math.min(5, math.floor(hazard.x / Config.zoneWidth) + 1)
+                counts[world] = counts[world] + 1
+            end
         end
         for world = 1, 5 do
             assert.is_true(counts[world] > 0)
@@ -36,8 +38,8 @@ describe("Indoor level", function()
                 assert.is_true(level:getDifficulty(world).startSpeed > level:getDifficulty(world - 1).startSpeed)
             end
         end
-        assert.is_true(level:getDifficulty(1).startSpeed >= Level:new():getDifficulty(4).endSpeed)
-        assert.is_true(level:getDifficulty(5).endSpeed <= 500)
+        assert.equals(260, level:getDifficulty(1).startSpeed)
+        assert.is_true(level:getDifficulty(5).endSpeed <= 450)
     end)
 
     it("keeps indoor floors and respawn points safe in all five worlds", function()
@@ -89,6 +91,7 @@ describe("Indoor level", function()
                         end
                     end
                 end
+                level.dog:update(dt, player)
                 for _, hazard in ipairs(level.hazards) do
                     assert.is_false(hazard:collidesWith(player:getHitbox()),
                         "Collision with " .. hazard.kind .. " at " .. hazard.x .. " (dt=" .. dt .. ")")
@@ -99,6 +102,7 @@ describe("Indoor level", function()
                 end
             end
             assert.is_true(player.x >= level.finishX)
+            assert.is_true(level.dog.passed)
         end
     end)
 end)

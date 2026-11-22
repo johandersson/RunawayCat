@@ -10,6 +10,7 @@ local MusicPlayer = require("game.music_player")
 local Particle = require("game.particle")
 local Player = require("game.player")
 local RenderCache = require("game.render_cache")
+local ResultDialog = require("game.result_dialog")
 local Util = require("game.util")
 local Zone = require("game.zone")
 
@@ -46,6 +47,7 @@ local music
 local meow
 local renderCache
 local interior
+local resultDialog
 local assetCache = Cache:new()
 
 local zones = Zone.defaults()
@@ -75,9 +77,26 @@ local function makeTone(frequency, duration, volume, wave)
         else
             value = math.sin(time * frequency * math.pi * 2)
         end
+
         data:setSample(i, value * volume * envelope)
     end
 
+    return love.audio.newSource(data, "static")
+end
+
+local function makeBark()
+    local sampleRate = 22050
+    local samples = math.floor(sampleRate * 0.45)
+    local data = love.sound.newSoundData(samples, sampleRate, 16, 1)
+    for i = 0, samples - 1 do
+        local time = i / sampleRate
+        local pulse = time < 0.16 and time or time - 0.24
+        local envelope = pulse >= 0 and pulse < 0.16
+            and math.min(1, pulse * 200) * math.exp(-pulse * 24) or 0
+        local voice = math.sin(pulse * 2 * math.pi * (110 - math.max(0, pulse) * 220))
+        local roughness = math.sin(pulse * 2 * math.pi * 330) * 0.3
+        data:setSample(i, (voice * 0.7 + roughness) * envelope * 0.22)
+    end
     return love.audio.newSource(data, "static")
 end
 
@@ -108,6 +127,7 @@ local function loadLevel(index)
     foods = level.foods
     zones = level.zones
     homecoming = nil
+    resultDialog = nil
     player = Player:new(105, GROUND_Y - 62)
     cameraX = 0
     distance = 0
@@ -128,7 +148,6 @@ local function resetGame()
     lives:reset()
     score = 0
     elapsed = 0
-    meow:reset()
 end
 
 local function startGame()
@@ -148,10 +167,12 @@ local function killPlayer()
     flash = 0.65
     addParticle(deathX, deathY, { 1.0, 0.35, 0.30 }, 24, 260)
     playSound("hurt")
+    meow:play()
 
     if lives:lose() then
         state = "gameover"
         highScore = math.max(highScore, score)
+        resultDialog = ResultDialog:new()
         return
     end
 
@@ -163,12 +184,13 @@ local function killPlayer()
     distance = math.floor(checkpointX / 10)
     message = lives:remaining() .. " liv kvar!"
     messageTimer = 2
+    if level.dog then
+        level.dog:reset()
+    end
 end
 
 local function requestJump()
     if state == "title" then
-        startGame()
-    elseif state == "gameover" or state == "won" then
         startGame()
     elseif state == "playing" then
         player:requestJump()
@@ -191,6 +213,7 @@ function App:load()
     sounds.hurt = makeTone(120, 0.35, 0.28, "square")
     sounds.start = makeTone(520, 0.18, 0.18, "sine")
     sounds.win = makeTone(880, 0.45, 0.20, "sine")
+    sounds.bark = makeBark()
     sounds.meow = assetCache:get("sound:cat-meow", function()
         return love.audio.newSource("assets/sounds/cat-meow.wav", "static")
     end)
@@ -213,10 +236,25 @@ function App:load()
     state = "title"
 end
 
-function App:keypressed(key)
+local function resultAction(action)
+    if action == "restart" then
+        startGame()
+    elseif action == "exit" then
+        music:stop()
+        love.event.quit()
+    end
+end
+
+function App:keypressed(key, _, isrepeat)
+    if state == "gameover" or state == "won" then
+        if not isrepeat then
+            resultAction(resultDialog:keypressed(key))
+        end
+        return
+    end
     if key == "space" or key == "up" or key == "w" then
         requestJump()
-    elseif key == "return" and (state == "title" or state == "gameover" or state == "won") then
+    elseif key == "return" and state == "title" then
         startGame()
     elseif key == "p" or key == "escape" then
         if state == "playing" then
@@ -224,8 +262,6 @@ function App:keypressed(key)
         elseif state == "paused" then
             state = "playing"
         end
-    elseif key == "r" and (state == "gameover" or state == "won") then
-        startGame()
     end
 end
 
@@ -235,8 +271,16 @@ function App:keyreleased(key)
     end
 end
 
-function App:mousepressed(_, _, button)
+function App:mousepressed(x, y, button)
     if button == 1 then
+        if state == "gameover" or state == "won" then
+            local width, height = love.graphics.getDimensions()
+            local scale = math.min(width / GAME_WIDTH, height / GAME_HEIGHT)
+            local logicalX = (x - (width - GAME_WIDTH * scale) / 2) / scale
+            local logicalY = (y - (height - GAME_HEIGHT * scale) / 2) / scale
+            resultAction(resultDialog:mousepressed(logicalX, logicalY))
+            return
+        end
         requestJump()
     end
 end
@@ -262,7 +306,6 @@ end
 
 local function collectFood(food)
     addScore(food:collect())
-    meow:tryPlay(food, elapsed, love.math.random)
     local colors = {
         fish = { 0.38, 0.83, 1.0 },
         milk = { 0.96, 0.96, 1.0 },
@@ -296,10 +339,15 @@ local function updatePlaying(dt)
     cameraX = math.max(0, Util.lerp(cameraX, player.x - 245, math.min(1, dt * 4.8)))
     local hitbox = player:getHitbox()
 
+    if level.dog and level.dog:update(dt, player) then
+        playSound("bark")
+        message = "En hund vaktar! Hoppa över den!"
+        messageTimer = 2
+    end
     for _, hazard in ipairs(hazards) do
         if hazard:collidesWith(hitbox) then
             killPlayer()
-            break
+            return
         end
     end
 
@@ -311,7 +359,7 @@ local function updatePlaying(dt)
 
     if player.y > GAME_HEIGHT + 120 then
         killPlayer()
-    elseif player.x >= LEVEL_END then
+    elseif player.x >= LEVEL_END and (not level.dog or level.dog.passed) then
         state = "homecoming"
         homecoming = Homecoming:new(player.x, HOME_X)
         addScore(1000)
@@ -353,6 +401,7 @@ local function updateHomecoming(dt)
             playSound("start")
         else
             state = "won"
+            resultDialog = ResultDialog:new()
         end
     end
 end
@@ -363,6 +412,7 @@ function App:getStatus()
         levelIndex = level.index,
         worldCount = #zones,
         score = score,
+        highScore = highScore,
         lives = lives:remaining(),
     }
 end
@@ -610,6 +660,23 @@ local function renderHazardSprite(hazard)
         love.graphics.rectangle("line", 5, 1, hazard.w - 10, hazard.h - 5, 2, 2)
         love.graphics.setColor(1.0, 0.81, 0.28)
         love.graphics.polygon("fill", 16, 7, 27, 7, 21, 0)
+    elseif hazard.kind == "dog" then
+        love.graphics.setColor(0.62, 0.38, 0.21)
+        love.graphics.ellipse("fill", 48, 26, 27, 18)
+        love.graphics.circle("fill", 17, 18, 16)
+        love.graphics.rectangle("fill", 24, 35, 12, 17, 5, 5)
+        love.graphics.rectangle("fill", 59, 35, 12, 17, 5, 5)
+        love.graphics.setLineWidth(7)
+        love.graphics.line(70, 21, 83, 14, 89, 5)
+        love.graphics.setColor(0.36, 0.21, 0.15)
+        love.graphics.ellipse("fill", 29, 15, 7, 14)
+        love.graphics.setColor(0.90, 0.73, 0.49)
+        love.graphics.ellipse("fill", 9, 27, 10, 7)
+        love.graphics.setColor(0.10, 0.10, 0.14)
+        love.graphics.circle("fill", 2, 23, 4)
+        love.graphics.circle("fill", 11, 13, 3)
+        love.graphics.setColor(0.30, 0.68, 0.87)
+        love.graphics.rectangle("fill", 28, 25, 5, 14, 2, 2)
     end
 end
 
@@ -620,6 +687,11 @@ local function drawHazard(hazard)
     end)
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(sprite, hazard.x - cameraX, hazard.y)
+    if hazard.kind == "dog" and hazard.barkTimer > 2.6 and not hazard.passed then
+        love.graphics.setFont(fonts.small)
+        love.graphics.setColor(1, 0.91, 0.66)
+        love.graphics.print("VOFF!", hazard.x - cameraX + 5, hazard.y - 32)
+    end
 end
 
 local function drawCat(x, y, scale, running)
@@ -812,6 +884,28 @@ local function drawOverlay(title, subtitle, prompt, color)
     love.graphics.printf(prompt, 0, 430, GAME_WIDTH, "center")
 end
 
+local function drawResults()
+    local won = state == "won"
+    local title = won and "FANTASTISKT!" or "BRA KÄMPAT!"
+    local encouragement = won and "Miso är hemma hos familjen. Vilket äventyr!"
+        or "Miso kom " .. distance .. " meter. Nästa gång når ni ännu längre!"
+    drawOverlay(title, encouragement .. "\nPoäng: " .. score .. "   Bästa poäng: " .. highScore,
+        "", { 1.0, 0.84, 0.40 })
+
+    for _, button in ipairs(resultDialog.buttons) do
+        local selected = resultDialog.selected == button.action
+        love.graphics.setColor(selected and 0.96 or 0.23, selected and 0.74 or 0.29, selected and 0.30 or 0.39)
+        love.graphics.rectangle("fill", button.x, button.y, button.w, button.h, 14, 14)
+        love.graphics.setColor(selected and 0.12 or 1, selected and 0.12 or 1, selected and 0.16 or 1)
+        love.graphics.setFont(fonts.medium)
+        love.graphics.printf(button.label, button.x, button.y + 14, button.w, "center")
+    end
+    love.graphics.setFont(fonts.small)
+    love.graphics.setColor(1, 1, 1, 0.88)
+    love.graphics.printf("Klicka ett val eller välj med ← / → och Enter. R: spela igen · Esc: avsluta",
+        100, 540, GAME_WIDTH - 200, "center")
+end
+
 local function drawGame()
     local zone = currentZoneAt(player.x)
     drawSky(zone)
@@ -871,20 +965,8 @@ local function drawGame()
         love.graphics.printf("TRYCK ENTER ELLER MELLANSLAG FÖR ATT STARTA", 0, 545, GAME_WIDTH, "center")
     elseif state == "paused" then
         drawOverlay("PAUS", "Miso tar en liten kattlur.", "Tryck P eller Esc för att fortsätta", { 0.45, 0.84, 1.0 })
-    elseif state == "gameover" then
-        drawOverlay(
-            "AJDÅ!",
-            "Miso blev stoppad efter " .. distance .. " meter.\nPoäng: " .. score .. "   Bästa: " .. highScore,
-            "Tryck R, Enter eller Mellanslag för att försöka igen",
-            { 1.0, 0.38, 0.34 }
-        )
-    elseif state == "won" then
-        drawOverlay(
-            "HEMMA!",
-            "Miso klarade båda äventyren och är hemma hos familjen!\nSlutpoäng: " .. score,
-            "Tryck R, Enter eller Mellanslag för att springa igen",
-            { 1.0, 0.84, 0.27 }
-        )
+    elseif state == "gameover" or state == "won" then
+        drawResults()
     end
 
     if flash > 0 then

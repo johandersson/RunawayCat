@@ -9,12 +9,22 @@ function LoveMock.install()
     }
 
     _G.love = {
+        event = {
+            quitRequested = false,
+            quit = function()
+                love.event.quitRequested = true
+            end,
+        },
         audio = {
             newSource = function(path)
                 return {
                     path = type(path) == "string" and path or "generated",
+                    plays = 0,
                     stop = function(self) self.playing = false end,
-                    play = function(self) self.playing = true end,
+                    play = function(self)
+                        self.playing = true
+                        self.plays = self.plays + 1
+                    end,
                     setLooping = function(self, looping) self.looping = looping end,
                     setVolume = function(self, volume) self.volume = volume end,
                     setPitch = function(self, pitch) self.pitch = pitch end,

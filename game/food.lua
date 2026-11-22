@@ -23,10 +23,6 @@ function Food:collect()
     return values[self.kind]
 end
 
-function Food:shouldMeow(random)
-    return self.kind == "fish" and (random or math.random)() < 0.03
-end
-
 function Food:getHitbox()
     return { x = self.x - 20, y = self.y - 20, w = 40, h = 40 }
 end

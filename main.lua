@@ -14,8 +14,8 @@ function love.draw()
     app:draw()
 end
 
-function love.keypressed(key)
-    app:keypressed(key)
+function love.keypressed(key, scancode, isrepeat)
+    app:keypressed(key, scancode, isrepeat)
 end
 
 function love.keyreleased(key)
