@@ -5,6 +5,7 @@ local Homecoming = require("game.homecoming")
 local Interior = require("game.interior")
 local Level = require("game.level")
 local LifeCounter = require("game.life_counter")
+local MeowPlayer = require("game.meow_player")
 local MusicPlayer = require("game.music_player")
 local Particle = require("game.particle")
 local Player = require("game.player")
@@ -42,6 +43,7 @@ local level
 local lives = LifeCounter:new()
 local homecoming
 local music
+local meow
 local renderCache
 local interior
 local assetCache = Cache:new()
@@ -114,6 +116,11 @@ local function loadLevel(index)
     flash = 0
     message = index == 2 and "Bana 2: Äventyret i huset!" or "Spring, Miso, spring!"
     messageTimer = 2
+    local path = index == 2 and "assets/music/retro-home.mp3" or "assets/music/retro-run.wav"
+    local source = assetCache:get("music:" .. path, function()
+        return love.audio.newSource(path, "static")
+    end)
+    music:switch(source, index == 2 and 0.90 or 1)
 end
 
 local function resetGame()
@@ -121,6 +128,7 @@ local function resetGame()
     lives:reset()
     score = 0
     elapsed = 0
+    meow:reset()
 end
 
 local function startGame()
@@ -186,11 +194,11 @@ function App:load()
     sounds.meow = assetCache:get("sound:cat-meow", function()
         return love.audio.newSource("assets/sounds/cat-meow.wav", "static")
     end)
-    local musicSource = assetCache:get("music:retro-run", function()
+    meow = MeowPlayer:new(sounds.meow)
+    local musicSource = assetCache:get("music:assets/music/retro-run.wav", function()
         return love.audio.newSource("assets/music/retro-run.wav", "static")
     end)
     music = MusicPlayer:new(musicSource, 0.28)
-    music:play()
 
     for i = 1, 12 do
         table.insert(clouds, {
@@ -254,9 +262,7 @@ end
 
 local function collectFood(food)
     addScore(food:collect())
-    if food:shouldMeow(love.math.random) then
-        playSound("meow")
-    end
+    meow:tryPlay(food, elapsed, love.math.random)
     local colors = {
         fish = { 0.38, 0.83, 1.0 },
         milk = { 0.96, 0.96, 1.0 },

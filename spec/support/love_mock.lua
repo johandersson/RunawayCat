@@ -4,20 +4,21 @@ local function noOp()
 end
 
 function LoveMock.install()
-    local source = {
-        stop = noOp,
-        play = noOp,
-        setLooping = noOp,
-        setVolume = noOp,
-    }
     local soundData = {
         setSample = noOp,
     }
 
     _G.love = {
         audio = {
-            newSource = function()
-                return source
+            newSource = function(path)
+                return {
+                    path = type(path) == "string" and path or "generated",
+                    stop = function(self) self.playing = false end,
+                    play = function(self) self.playing = true end,
+                    setLooping = function(self, looping) self.looping = looping end,
+                    setVolume = function(self, volume) self.volume = volume end,
+                    setPitch = function(self, pitch) self.pitch = pitch end,
+                }
             end,
         },
         graphics = {

@@ -24,7 +24,7 @@ function Food:collect()
 end
 
 function Food:shouldMeow(random)
-    return self.kind == "fish" and (random or math.random)() < 0.30
+    return self.kind == "fish" and (random or math.random)() < 0.03
 end
 
 function Food:getHitbox()

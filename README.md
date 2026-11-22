@@ -43,15 +43,19 @@ When Miso reaches the outdoor finish line, he runs to his home and reunites with
 4. **Laundry Labyrinth (Tvättlabyrinten)** — oversized washing machines, laundry baskets, and more scattered toys.
 5. **Attic Treasure Room (Vindens skattkammare)** — roof beams, storage boxes, and mousetraps.
 
-Indoor floors have no holes. The speed rises gradually from 450 to 500, household hazards remain small, and bonus platforms stay within Miso's jump height. Score, remaining lives, extra-life thresholds, and music carry over from Level 1. Each indoor world has a safe respawn point. After finishing Level 2, Miso has a final family hug and the results screen appears. Restarting begins a fresh run at Level 1.
+Indoor floors have no holes. The speed rises gradually from 450 to 500, household hazards remain small, and bonus platforms stay within Miso's jump height. Score, remaining lives, and extra-life thresholds carry over from Level 1. Each indoor world has a safe respawn point. After finishing Level 2, Miso has a final family hug and the results screen appears. Restarting begins a fresh run at Level 1.
 
-The retro music is “Level 1” from **5 Chiptunes (Action)** by Juhani Junkala / SubspaceAudio. The cat sound is “Meow of a Siamese cat” by freemaster2. Both are released under CC0 1.0; full details are available in [`assets/music/LICENSE.md`](assets/music/LICENSE.md) and [`assets/sounds/LICENSE.md`](assets/sounds/LICENSE.md).
+The outdoor retro music is “Level 1” from **5 Chiptunes (Action)** by Juhani Junkala / SubspaceAudio (CC0 1.0). The indoor music is “bgm_menu” from **8-bit Music Pack (Loopable)** by CodeManu on OpenGameArt (CC BY 3.0), played at 90% speed for a gentler feel. The music switches automatically on entering the house and switches back when restarting. Both tracks are cached in memory and loop.
+
+The cat sound is “Meow of a Siamese cat” by freemaster2 (CC0 1.0). It plays on only 3% of fish pickups, with at least 12 seconds between meows, at volume 0.10 versus the music's 0.28.
+
+Attribution and license details are included in [`assets/music/LICENSE.md`](assets/music/LICENSE.md) and [`assets/sounds/LICENSE.md`](assets/sounds/LICENSE.md). The indoor track's full CC BY 3.0 license is included in [`assets/music/CC-BY-3.0.txt`](assets/music/CC-BY-3.0.txt).
 
 ## License
 
 Copyright © 2026 Johan Andersson.
 
-The game’s source code is free software licensed under the [GNU General Public License, version 3 or later](LICENSE). Third-party assets retain their respective CC0 licenses as described above.
+The game’s source code is free software licensed under the [GNU General Public License, version 3 or later](LICENSE). Third-party assets retain their respective CC0 or CC BY 3.0 licenses as described above.
 
 ## Architecture
 

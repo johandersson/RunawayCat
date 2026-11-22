@@ -87,4 +87,25 @@ describe("Two-level campaign", function()
             end)
         end
     end)
+
+    it("changes soundtrack on entering the house and restores it on restart", function()
+        local music = assert(upvalue(App.update, "music"))
+        local outdoor = music.source
+        assert.equals("assets/music/retro-run.wav", outdoor.path)
+
+        completeLevel(app)
+        local indoor = music.source
+        assert.equals("assets/music/retro-home.mp3", indoor.path)
+        assert.is_false(outdoor.playing)
+        assert.is_true(indoor.playing)
+        assert.equals(0.90, indoor.pitch)
+
+        completeLevel(app)
+        app:keypressed("r")
+        assert.is_true(outdoor == music.source)
+        assert.is_false(indoor.playing)
+        assert.is_true(outdoor.playing)
+        assert.equals(1, outdoor.pitch)
+        assert.is_true(upvalue(App.update, "meow").source.volume < outdoor.volume)
+    end)
 end)

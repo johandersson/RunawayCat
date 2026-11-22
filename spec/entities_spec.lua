@@ -14,15 +14,15 @@ describe("Game entities", function()
         assert.equals(0, cake:collect())
     end)
 
-    it("sometimes meows when a fish is eaten", function()
+    it("rarely meows when a fish is eaten", function()
         local fish = Food:new(10, 20, "fish")
         local milk = Food:new(10, 20, "milk")
 
         assert.is_true(fish:shouldMeow(function()
-            return 0.29
+            return 0.029
         end))
         assert.is_false(fish:shouldMeow(function()
-            return 0.30
+            return 0.03
         end))
         assert.is_false(milk:shouldMeow(function()
             return 0
