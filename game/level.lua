@@ -120,10 +120,8 @@ function Level:build()
     self:addFood(self.finishX - 180, Config.groundY - 65, "cake")
     self:addFood(self.finishX - 120, Config.groundY - 90, "milk")
     self:addFood(self.finishX - 60, Config.groundY - 65, "cake")
-    if self.index == 2 then
-        self.dog = Dog:new(self.finishX - 220)
-        table.insert(self.hazards, self.dog)
-    end
+    self.dog = Dog:new(self.finishX - 220)
+    table.insert(self.hazards, self.dog)
     return self
 end
 

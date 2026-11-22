@@ -107,10 +107,12 @@ describe("Level difficulty progression", function()
         end
     end)
 
-    it("keeps every hard-level hazard small", function()
+    it("keeps ordinary hard-level obstacles small", function()
         for _, hazard in ipairs(level.hazards) do
-            assert.is_true(hazard.w <= 45)
-            assert.is_true(hazard.h <= 36)
+            if hazard.kind ~= "dog" then
+                assert.is_true(hazard.w <= 45)
+                assert.is_true(hazard.h <= 36)
+            end
         end
     end)
 end)

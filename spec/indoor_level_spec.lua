@@ -74,7 +74,8 @@ describe("Indoor level", function()
                 if player.onGround then
                     for _, hazard in ipairs(level.hazards) do
                         local ahead = hazard.x - (player.x + player.w)
-                        if ahead >= 0 and ahead < 75 then
+                        local jumpDistance = hazard.kind == "dog" and 100 or 75
+                        if ahead >= 0 and ahead < jumpDistance then
                             player:requestJump()
                             break
                         end

@@ -208,4 +208,21 @@ describe("Two-level campaign", function()
         assert.equals(3, app:getStatus().lives)
         assert.equals(before, source.plays)
     end)
+
+    it("plays a real bark as the dog runs toward Miso in either level", function()
+        for index = 1, 2 do
+            if index == 2 then completeLevel(app) end
+            local level = upvalue(App.update, "level")
+            local player = upvalue(App.update, "player")
+            local bark = upvalue(App.update, "sounds").bark
+            local plays = bark.plays
+            assert.equals("assets/sounds/dog-bark.wav", bark.path)
+            player.x = level.dog.x - 350
+            local beforeX = level.dog.x
+            app:update(1 / 60)
+            assert.equals(plays + 1, bark.plays)
+            assert.is_true(level.dog.x < beforeX)
+            assert.has_no.errors(function() app:draw() end)
+        end
+    end)
 end)

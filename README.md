@@ -37,7 +37,7 @@ The difficulty increases gradually:
 
 Level 1 now ramps from 220 to 335 pixels per second, with lower bonus platforms and fewer, smaller holes.
 
-All graphics, animations, and level design are generated directly in Lua.
+Most graphics, animations, and level design are generated directly in Lua. The dog uses freely licensed pixel-art animation frames.
 
 When Miso reaches the outdoor finish line, he runs to his home and reunites with his family. He then enters **Level 2: Inside Miso's Home**, a much larger-than-life indoor adventure with five worlds:
 
@@ -49,7 +49,9 @@ When Miso reaches the outdoor finish line, he runs to his home and reunites with
 
 Indoor floors have no holes. The speed rises gradually from 260 to 440, comparable to the previous outdoor difficulty. Early rooms have fewer obstacles; the later rooms add more. Household hazards remain small, and bonus platforms stay within Miso's jump height. Score, remaining lives, and extra-life thresholds carry over from Level 1. Each indoor world has a safe respawn point.
 
-A barking dog guards the indoor finish. It lunges a short distance toward Miso, so jump over it to reach the family. Being caught costs a life, just like other hazards. Its graphic is cached and its quiet, cooldown-limited bark is generated in Lua without third-party assets.
+A large German Shepherd runs toward Miso near the finish of **both levels**. At 120 by 85 pixels, it is larger than Miso's 66 by 58-pixel body. It starts running when Miso approaches and stops attacking once he clears it. Jump a little earlier than for small stationary obstacles to pass it; being caught costs a life, just like other hazards.
+
+The dog's idle, five-frame running and three-frame barking animations are **German Shepherd** by Shepardskin on OpenGameArt (CC0 1.0). The sprite faces Miso and its decoded images are cached. Its bark is a real recording from **Dog sounds** by Pauliuw on OpenGameArt (CC0 1.0), cached at volume 0.55 with a three-second repeat cooldown.
 
 After finishing Level 2, Miso has a final family hug. Both victory and game-over show an encouraging dialog with the score and best score for the current game session. The game stays on this dialog until you explicitly choose Restart or Exit. Restarting begins a fresh run at Level 1.
 
@@ -57,7 +59,7 @@ The outdoor retro music is “Level 1” from **5 Chiptunes (Action)** by Juhani
 
 The cat sound is “Meow of a Siamese cat” by freemaster2 (CC0 1.0). Miso meows only when losing a life, including the final life. It never plays on food pickups or protected collisions. The volume is 0.60 (six times the previous 0.10); music remains at 0.28. Every lost life triggers the meow, without randomness or a cooldown.
 
-Attribution and license details are included in [`assets/music/LICENSE.md`](assets/music/LICENSE.md) and [`assets/sounds/LICENSE.md`](assets/sounds/LICENSE.md). The indoor track's full CC BY 3.0 license is included in [`assets/music/CC-BY-3.0.txt`](assets/music/CC-BY-3.0.txt).
+Attribution and license details are included in [`assets/music/LICENSE.md`](assets/music/LICENSE.md), [`assets/sounds/LICENSE.md`](assets/sounds/LICENSE.md), and [`assets/sprites/dog/LICENSE.md`](assets/sprites/dog/LICENSE.md). The indoor track's full CC BY 3.0 license is included in [`assets/music/CC-BY-3.0.txt`](assets/music/CC-BY-3.0.txt).
 
 ## License
 
@@ -72,7 +74,7 @@ The game code is organized into testable classes under `game/`:
 - `Player`, `Level`, `Difficulty`, and `Zone` control the player and progression.
 - Both levels reuse the same generator and gameplay; `Interior` draws five cached indoor scenery panels.
 - `Platform`, `Hazard`, `Food`, and `Particle` represent game objects.
-- `Dog` extends the shared hazard collision behavior with a bounded lunge and bark cooldown; `ResultDialog` handles explicit end-of-run choices.
+- `Dog` extends shared hazard collision behavior with a run toward Miso and a bark cooldown; `DogSprite` draws cached, freely licensed animation frames. `ResultDialog` handles explicit end-of-run choices.
 - `Class`, `Config`, and `Util` provide shared infrastructure.
 - `Cache` provides functional memoization, while `RenderCache` rasterizes reusable graphics to canvases only once.
 - Food, obstacles, and the house use the canvas cache; the retro music is decoded once and kept in a memoized memory cache.

@@ -47,6 +47,12 @@ function LoveMock.install()
             newCanvas = function(width, height)
                 return { width = width, height = height }
             end,
+            newImage = function(path)
+                return {
+                    path = path,
+                    setFilter = noOp,
+                }
+            end,
             newFont = function(size)
                 return { size = size }
             end,

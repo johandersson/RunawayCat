@@ -1,6 +1,7 @@
 local Class = require("game.class")
 local Cache = require("game.cache")
 local Config = require("game.config")
+local DogSprite = require("game.dog_sprite")
 local Homecoming = require("game.homecoming")
 local Interior = require("game.interior")
 local Level = require("game.level")
@@ -47,6 +48,7 @@ local music
 local meow
 local renderCache
 local interior
+local dogSprite
 local resultDialog
 local assetCache = Cache:new()
 
@@ -81,22 +83,6 @@ local function makeTone(frequency, duration, volume, wave)
         data:setSample(i, value * volume * envelope)
     end
 
-    return love.audio.newSource(data, "static")
-end
-
-local function makeBark()
-    local sampleRate = 22050
-    local samples = math.floor(sampleRate * 0.45)
-    local data = love.sound.newSoundData(samples, sampleRate, 16, 1)
-    for i = 0, samples - 1 do
-        local time = i / sampleRate
-        local pulse = time < 0.16 and time or time - 0.24
-        local envelope = pulse >= 0 and pulse < 0.16
-            and math.min(1, pulse * 200) * math.exp(-pulse * 24) or 0
-        local voice = math.sin(pulse * 2 * math.pi * (110 - math.max(0, pulse) * 220))
-        local roughness = math.sin(pulse * 2 * math.pi * 330) * 0.3
-        data:setSample(i, (voice * 0.7 + roughness) * envelope * 0.22)
-    end
     return love.audio.newSource(data, "static")
 end
 
@@ -207,13 +193,18 @@ function App:load()
     fonts.hero = love.graphics.newFont(82)
     renderCache = RenderCache:new(love.graphics)
     interior = Interior:new(love.graphics, renderCache)
+    dogSprite = DogSprite:new(love.graphics, assetCache)
 
     sounds.jump = makeTone(430, 0.12, 0.22, "square")
     sounds.food = makeTone(760, 0.10, 0.18, "sine")
     sounds.hurt = makeTone(120, 0.35, 0.28, "square")
     sounds.start = makeTone(520, 0.18, 0.18, "sine")
     sounds.win = makeTone(880, 0.45, 0.20, "sine")
-    sounds.bark = makeBark()
+    sounds.bark = assetCache:get("sound:dog-bark", function()
+        local source = love.audio.newSource("assets/sounds/dog-bark.wav", "static")
+        source:setVolume(0.55)
+        return source
+    end)
     sounds.meow = assetCache:get("sound:cat-meow", function()
         return love.audio.newSource("assets/sounds/cat-meow.wav", "static")
     end)
@@ -660,38 +651,25 @@ local function renderHazardSprite(hazard)
         love.graphics.rectangle("line", 5, 1, hazard.w - 10, hazard.h - 5, 2, 2)
         love.graphics.setColor(1.0, 0.81, 0.28)
         love.graphics.polygon("fill", 16, 7, 27, 7, 21, 0)
-    elseif hazard.kind == "dog" then
-        love.graphics.setColor(0.62, 0.38, 0.21)
-        love.graphics.ellipse("fill", 48, 26, 27, 18)
-        love.graphics.circle("fill", 17, 18, 16)
-        love.graphics.rectangle("fill", 24, 35, 12, 17, 5, 5)
-        love.graphics.rectangle("fill", 59, 35, 12, 17, 5, 5)
-        love.graphics.setLineWidth(7)
-        love.graphics.line(70, 21, 83, 14, 89, 5)
-        love.graphics.setColor(0.36, 0.21, 0.15)
-        love.graphics.ellipse("fill", 29, 15, 7, 14)
-        love.graphics.setColor(0.90, 0.73, 0.49)
-        love.graphics.ellipse("fill", 9, 27, 10, 7)
-        love.graphics.setColor(0.10, 0.10, 0.14)
-        love.graphics.circle("fill", 2, 23, 4)
-        love.graphics.circle("fill", 11, 13, 3)
-        love.graphics.setColor(0.30, 0.68, 0.87)
-        love.graphics.rectangle("fill", 28, 25, 5, 14, 2, 2)
     end
 end
 
 local function drawHazard(hazard)
+    if hazard.kind == "dog" then
+        dogSprite:draw(hazard, cameraX)
+        if hazard.barkTimer > 2.6 and not hazard.passed then
+            love.graphics.setFont(fonts.small)
+            love.graphics.setColor(1, 0.91, 0.66)
+            love.graphics.print("VOFF!", hazard.x - cameraX + 5, hazard.y - 32)
+        end
+        return
+    end
     local key = table.concat({ "hazard", hazard.kind, hazard.w, hazard.h }, ":")
     local sprite = renderCache:get(key, hazard.w + 18, hazard.h + 8, function()
         renderHazardSprite(hazard)
     end)
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(sprite, hazard.x - cameraX, hazard.y)
-    if hazard.kind == "dog" and hazard.barkTimer > 2.6 and not hazard.passed then
-        love.graphics.setFont(fonts.small)
-        love.graphics.setColor(1, 0.91, 0.66)
-        love.graphics.print("VOFF!", hazard.x - cameraX + 5, hazard.y - 32)
-    end
 end
 
 local function drawCat(x, y, scale, running)
