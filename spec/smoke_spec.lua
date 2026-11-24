@@ -13,6 +13,7 @@ describe("LÖVE application harness", function()
         assert.is_function(love.keypressed)
         assert.is_function(love.keyreleased)
         assert.is_function(love.mousepressed)
+        assert.is_function(love.quit)
     end)
 
     it("loads, starts, updates, and draws without an error", function()

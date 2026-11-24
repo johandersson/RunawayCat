@@ -60,6 +60,7 @@ local resultDialog
 local unlockDialog
 local quitDialog
 local stateBeforeQuit
+local quitConfirmed = false
 local moneyBag
 local assetCache = Cache:new()
 
@@ -205,6 +206,9 @@ end
 function App:load()
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.math.setRandomSeed(os.time())
+    quitConfirmed = false
+    quitDialog = nil
+    stateBeforeQuit = nil
 
     fonts.small = love.graphics.newFont(20)
     fonts.medium = love.graphics.newFont(30)
@@ -278,6 +282,7 @@ end
 
 local function quitAction(action)
     if action == "quit" then
+        quitConfirmed = true
         music:stop()
         love.event.quit()
     elseif action == "cancel" then
@@ -287,15 +292,29 @@ local function quitAction(action)
     end
 end
 
+local function showQuitConfirmation()
+    if state ~= "quit_confirm" then
+        stateBeforeQuit = state
+        state = "quit_confirm"
+        quitDialog = QuitDialog:new()
+    end
+end
+
+function App:requestQuit()
+    if quitConfirmed then
+        return false
+    end
+    showQuitConfirmation()
+    return true
+end
+
 function App:keypressed(key, _, isrepeat)
     local controlDown = love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")
-    if key == "escape" and controlDown then
+    if controlDown and (key == "escape" or key == "q") then
         if state == "quit_confirm" then
             quitAction("cancel")
         elseif not isrepeat then
-            stateBeforeQuit = state
-            state = "quit_confirm"
-            quitDialog = QuitDialog:new()
+            showQuitConfirmation()
         end
         return
     end

@@ -18,7 +18,9 @@ The game starts in borderless desktop fullscreen, without the Windows title bar 
 - **Space**, **W**, **up arrow**, or **left mouse button**: jump
 - Release the jump button early for a shorter jump
 - **P** or **Esc**: pause/resume
-- **Ctrl+Esc**: open a confirmation dialog before quitting
+- **Ctrl+Q**: open a confirmation dialog before quitting
+- **Ctrl+Esc**: also opens the dialog on systems where the operating system does not reserve this shortcut
+- **Alt+F4** or the operating-system close command: open the same confirmation dialog
 - **R**: restart after winning or getting a game over
 - On the results dialog, click **Spela igen** (Restart) or **Avsluta** (Exit), or select with **left/right arrows** or **Tab** and confirm with **Enter**. **Esc** exits.
 - Jump keys and clicks outside the dialog buttons never restart a finished run.

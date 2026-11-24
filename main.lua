@@ -25,3 +25,7 @@ end
 function love.mousepressed(x, y, button)
     app:mousepressed(x, y, button)
 end
+
+function love.quit()
+    return app:requestQuit()
+end

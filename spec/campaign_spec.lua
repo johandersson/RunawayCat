@@ -346,6 +346,17 @@ describe("Two-level campaign", function()
         assert.has_no.errors(function() app:draw() end)
     end)
 
+    it("provides Ctrl+Q when Windows reserves Ctrl+Escape", function()
+        love.keyboard.isDown = function(key)
+            return key == "lctrl"
+        end
+
+        app:keypressed("q")
+
+        assert.equals("quit_confirm", app:getStatus().state)
+        assert.is_false(love.event.quitRequested)
+    end)
+
     it("restores play when the default quit choice is confirmed", function()
         love.keyboard.isDown = function(key)
             return key == "rctrl"
@@ -376,5 +387,17 @@ describe("Two-level campaign", function()
 
         assert.is_true(love.event.quitRequested)
         assert.is_false(music.source.playing)
+    end)
+
+    it("intercepts operating-system close requests until quit is confirmed", function()
+        assert.is_true(app:requestQuit())
+        assert.equals("quit_confirm", app:getStatus().state)
+        assert.is_false(love.event.quitRequested)
+
+        app:keypressed("left")
+        app:keypressed("return")
+
+        assert.is_true(love.event.quitRequested)
+        assert.is_false(app:requestQuit())
     end)
 end)
