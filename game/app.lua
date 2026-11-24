@@ -1,5 +1,7 @@
 local Class = require("game.class")
 local Cache = require("game.cache")
+local Castle = require("game.castle")
+local CastleUnlock = require("game.castle_unlock")
 local Config = require("game.config")
 local DogSprite = require("game.dog_sprite")
 local Homecoming = require("game.homecoming")
@@ -12,6 +14,7 @@ local Particle = require("game.particle")
 local Player = require("game.player")
 local RenderCache = require("game.render_cache")
 local ResultDialog = require("game.result_dialog")
+local UnlockDialog = require("game.unlock_dialog")
 local Util = require("game.util")
 local Zone = require("game.zone")
 
@@ -48,8 +51,12 @@ local music
 local meow
 local renderCache
 local interior
+local castle
+local castleUnlock
 local dogSprite
 local resultDialog
+local unlockDialog
+local moneyBag
 local assetCache = Cache:new()
 
 local zones = Zone.defaults()
@@ -114,15 +121,20 @@ local function loadLevel(index)
     zones = level.zones
     homecoming = nil
     resultDialog = nil
+    unlockDialog = nil
     player = Player:new(105, GROUND_Y - 62)
     cameraX = 0
     distance = 0
     particles = {}
     screenShake = 0
     flash = 0
-    message = index == 2 and "Bana 2: Äventyret i huset!" or "Spring, Miso, spring!"
+    message = index == 2 and "Bana 2: Äventyret i huset!"
+        or index == 3 and "Bana 3: Det hemliga slottet!"
+        or "Spring, Miso, spring!"
     messageTimer = 2
-    local path = index == 2 and "assets/music/retro-home.mp3" or "assets/music/retro-run.wav"
+    local path = index == 2 and "assets/music/retro-home.mp3"
+        or index == 3 and "assets/music/castle-mystery.ogg"
+        or "assets/music/retro-run.wav"
     local source = assetCache:get("music:" .. path, function()
         return love.audio.newSource(path, "static")
     end)
@@ -193,7 +205,15 @@ function App:load()
     fonts.hero = love.graphics.newFont(82)
     renderCache = RenderCache:new(love.graphics)
     interior = Interior:new(love.graphics, renderCache)
+    castle = Castle:new(love.graphics, renderCache)
     dogSprite = DogSprite:new(love.graphics, assetCache)
+    castleUnlock = CastleUnlock:new(love.filesystem)
+    castleUnlock:load()
+    moneyBag = assetCache:get("sprite:money-bag", function()
+        local image = love.graphics.newImage("assets/sprites/money-bag/money-bag.png")
+        image:setFilter("nearest", "nearest")
+        return image
+    end)
 
     sounds.jump = makeTone(430, 0.12, 0.22, "square")
     sounds.food = makeTone(760, 0.10, 0.18, "sine")
@@ -236,7 +256,26 @@ local function resultAction(action)
     end
 end
 
+local function unlockAction(action)
+    if action == "unlock" then
+        castleUnlock:unlock()
+        loadLevel(3)
+        state = "playing"
+        player.invulnerable = 1.5
+        playSound("start")
+    elseif action == "decline" then
+        state = "won"
+        resultDialog = ResultDialog:new()
+    end
+end
+
 function App:keypressed(key, _, isrepeat)
+    if state == "castle_unlock" then
+        if not isrepeat then
+            unlockAction(unlockDialog:keypressed(key))
+        end
+        return
+    end
     if state == "gameover" or state == "won" then
         if not isrepeat then
             resultAction(resultDialog:keypressed(key))
@@ -264,12 +303,16 @@ end
 
 function App:mousepressed(x, y, button)
     if button == 1 then
-        if state == "gameover" or state == "won" then
+        if state == "castle_unlock" or state == "gameover" or state == "won" then
             local width, height = love.graphics.getDimensions()
             local scale = math.min(width / GAME_WIDTH, height / GAME_HEIGHT)
             local logicalX = (x - (width - GAME_WIDTH * scale) / 2) / scale
             local logicalY = (y - (height - GAME_HEIGHT * scale) / 2) / scale
-            resultAction(resultDialog:mousepressed(logicalX, logicalY))
+            if state == "castle_unlock" then
+                unlockAction(unlockDialog:mousepressed(logicalX, logicalY))
+            else
+                resultAction(resultDialog:mousepressed(logicalX, logicalY))
+            end
             return
         end
         requestJump()
@@ -390,6 +433,14 @@ local function updateHomecoming(dt)
             state = "playing"
             player.invulnerable = 1.5
             playSound("start")
+        elseif level.index == 2 and castleUnlock:isUnlocked() then
+            loadLevel(3)
+            state = "playing"
+            player.invulnerable = 1.5
+            playSound("start")
+        elseif level.index == 2 and castleUnlock:qualifies(score) then
+            state = "castle_unlock"
+            unlockDialog = UnlockDialog:new()
         else
             state = "won"
             resultDialog = ResultDialog:new()
@@ -405,6 +456,7 @@ function App:getStatus()
         score = score,
         highScore = highScore,
         lives = lives:remaining(),
+        castleUnlocked = castleUnlock:isUnlocked(),
     }
 end
 
@@ -504,6 +556,9 @@ end
 local function drawBackground(zoneIndex)
     if level.index == 2 then
         interior:draw(zones[zoneIndex].room, cameraX)
+        return
+    elseif level.index == 3 then
+        castle:draw(zones[zoneIndex].area, cameraX)
         return
     end
     if zoneIndex == 4 then
@@ -651,6 +706,35 @@ local function renderHazardSprite(hazard)
         love.graphics.rectangle("line", 5, 1, hazard.w - 10, hazard.h - 5, 2, 2)
         love.graphics.setColor(1.0, 0.81, 0.28)
         love.graphics.polygon("fill", 16, 7, 27, 7, 21, 0)
+    elseif hazard.kind == "barrel" then
+        love.graphics.setColor(0.48, 0.27, 0.13)
+        love.graphics.rectangle("fill", 2, 0, hazard.w - 4, hazard.h, 12, 12)
+        love.graphics.setColor(0.70, 0.72, 0.75)
+        love.graphics.rectangle("fill", 0, 6, hazard.w, 4)
+        love.graphics.rectangle("fill", 0, hazard.h - 10, hazard.w, 4)
+    elseif hazard.kind == "shield" then
+        love.graphics.setColor(0.67, 0.69, 0.75)
+        love.graphics.polygon("fill", 2, 1, hazard.w - 2, 1, hazard.w - 5, hazard.h - 9,
+            hazard.w / 2, hazard.h, 5, hazard.h - 9)
+        love.graphics.setColor(0.65, 0.15, 0.20)
+        love.graphics.rectangle("fill", hazard.w / 2 - 3, 4, 6, hazard.h - 10)
+    elseif hazard.kind == "chains" then
+        love.graphics.setColor(0.64, 0.67, 0.72)
+        for x = 4, hazard.w - 4, 10 do
+            love.graphics.ellipse("line", x, hazard.h / 2, 6, hazard.h / 2)
+        end
+    elseif hazard.kind == "spikes" then
+        love.graphics.setColor(0.72, 0.74, 0.78)
+        for i = 0, 4 do
+            local left = i * hazard.w / 5
+            love.graphics.polygon("fill", left, hazard.h, left + hazard.w / 10, 0, left + hazard.w / 5, hazard.h)
+        end
+    elseif hazard.kind == "treasure" then
+        love.graphics.setColor(0.43, 0.23, 0.11)
+        love.graphics.rectangle("fill", 0, 8, hazard.w, hazard.h - 8, 5, 5)
+        love.graphics.arc("fill", "closed", hazard.w / 2, 10, hazard.w / 2, math.pi, math.pi * 2)
+        love.graphics.setColor(0.96, 0.72, 0.20)
+        love.graphics.rectangle("fill", hazard.w / 2 - 3, 8, 6, 12)
     end
 end
 
@@ -884,6 +968,39 @@ local function drawResults()
         100, 540, GAME_WIDTH - 200, "center")
 end
 
+local function drawCastleUnlock()
+    love.graphics.setColor(0.02, 0.03, 0.08, 0.84)
+    love.graphics.rectangle("fill", 0, 0, GAME_WIDTH, GAME_HEIGHT)
+    love.graphics.setColor(0.13, 0.10, 0.17)
+    love.graphics.rectangle("fill", 235, 95, 810, 525, 24, 24)
+    love.graphics.setColor(0.96, 0.73, 0.22)
+    love.graphics.setLineWidth(5)
+    love.graphics.rectangle("line", 235, 95, 810, 525, 24, 24)
+
+    love.graphics.setFont(fonts.large)
+    love.graphics.setColor(1.0, 0.82, 0.34)
+    love.graphics.printf("EN HEMLIG BELÖNING!", 270, 125, 740, "center")
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(moneyBag, GAME_WIDTH / 2, 275, 0, 8, 8, 7, 7.5)
+    love.graphics.setFont(fonts.medium)
+    love.graphics.printf("Du klarade båda banorna med över 20 000 poäng!\n"
+        .. "Vill du använda pengapåsen för att låsa upp Slottsbanan?",
+        300, 375, 680, "center")
+
+    for _, button in ipairs(unlockDialog.buttons) do
+        local selected = unlockDialog.selected == button.action
+        love.graphics.setColor(selected and 0.96 or 0.25, selected and 0.73 or 0.25, selected and 0.24 or 0.34)
+        love.graphics.rectangle("fill", button.x, button.y, button.w, button.h, 14, 14)
+        love.graphics.setColor(selected and 0.12 or 1, selected and 0.10 or 1, selected and 0.15 or 1)
+        love.graphics.setFont(fonts.medium)
+        love.graphics.printf(button.label, button.x, button.y + 14, button.w, "center")
+    end
+    love.graphics.setFont(fonts.small)
+    love.graphics.setColor(1, 1, 1, 0.82)
+    love.graphics.printf("Välj med ← / → eller Tab och bekräfta med Enter.",
+        260, 585, 760, "center")
+end
+
 local function drawGame()
     local zone = currentZoneAt(player.x)
     drawSky(zone)
@@ -943,6 +1060,8 @@ local function drawGame()
         love.graphics.printf("TRYCK ENTER ELLER MELLANSLAG FÖR ATT STARTA", 0, 545, GAME_WIDTH, "center")
     elseif state == "paused" then
         drawOverlay("PAUS", "Miso tar en liten kattlur.", "Tryck P eller Esc för att fortsätta", { 0.45, 0.84, 1.0 })
+    elseif state == "castle_unlock" then
+        drawCastleUnlock()
     elseif state == "gameover" or state == "won" then
         drawResults()
     end

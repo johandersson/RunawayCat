@@ -24,6 +24,28 @@ local function upvalue(fn, name, visited)
     end
 end
 
+local function setUpvalue(fn, name, newValue, visited)
+    visited = visited or {}
+    if visited[fn] then
+        return false
+    end
+    visited[fn] = true
+    for i = 1, 100 do
+        local key, value = debug.getupvalue(fn, i)
+        if not key then
+            break
+        end
+        if key == name then
+            debug.setupvalue(fn, i, newValue)
+            return true
+        end
+        if type(value) == "function" and setUpvalue(value, name, newValue, visited) then
+            return true
+        end
+    end
+    return false
+end
+
 local function completeLevel(app)
     local player = assert(upvalue(App.update, "player"))
     local level = assert(upvalue(App.update, "level"))
@@ -72,6 +94,54 @@ describe("Two-level campaign", function()
         assert.equals(1, app:getStatus().levelIndex)
         assert.equals(3, app:getStatus().lives)
         assert.equals(0, app:getStatus().score)
+    end)
+
+    it("offers and persists the castle unlock after both levels above 20,000 points", function()
+        completeLevel(app)
+        assert.is_true(setUpvalue(App.update, "score", 20001))
+        completeLevel(app)
+
+        assert.equals("castle_unlock", app:getStatus().state)
+        assert.is_false(app:getStatus().castleUnlocked)
+        assert.has_no.errors(function() app:draw() end)
+
+        app:keypressed("return")
+        assert.equals("playing", app:getStatus().state)
+        assert.equals(3, app:getStatus().levelIndex)
+        assert.equals(5, app:getStatus().worldCount)
+        assert.is_true(app:getStatus().castleUnlocked)
+        local music = assert(upvalue(App.update, "music"))
+        assert.equals("assets/music/castle-mystery.ogg", music.source.path)
+        assert.equals(1, music.source.pitch)
+
+        local player = assert(upvalue(App.update, "player"))
+        for area = 1, 5 do
+            player.x = (area - 1) * 2800 + 200
+            assert.has_no.errors(function() app:draw() end)
+        end
+
+        completeLevel(app)
+        assert.equals("won", app:getStatus().state)
+
+        app:keypressed("r")
+        completeLevel(app)
+        assert.is_true(setUpvalue(App.update, "score", 0))
+        completeLevel(app)
+        assert.equals("playing", app:getStatus().state)
+        assert.equals(3, app:getStatus().levelIndex)
+    end)
+
+    it("keeps the castle locked when the reward is declined", function()
+        completeLevel(app)
+        assert.is_true(setUpvalue(App.update, "score", 20001))
+        completeLevel(app)
+
+        app:keypressed("right")
+        app:keypressed("return")
+
+        assert.equals("won", app:getStatus().state)
+        assert.equals(2, app:getStatus().levelIndex)
+        assert.is_false(app:getStatus().castleUnlocked)
     end)
 
     it("renders every indoor world and its hazards through the existing cache", function()

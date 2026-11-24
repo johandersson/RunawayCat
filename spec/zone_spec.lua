@@ -17,4 +17,12 @@ describe("Zone", function()
 
         assert.equals("Hemkvarteren", second[1].name)
     end)
+
+    it("provides five castle areas for the unlockable level", function()
+        local zones = Zone.defaults(3)
+
+        assert.equals(5, #zones)
+        assert.equals("courtyard", zones[1].area)
+        assert.equals("treasury", zones[5].area)
+    end)
 end)

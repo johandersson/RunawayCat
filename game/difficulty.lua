@@ -46,16 +46,26 @@ local indoorSettings = {
     { startSpeed = 415, endSpeed = 440, hazardsPerSection = 1.5, platformRise = 124, gapCount = 0, gapWidth = 0 },
 }
 
+local castleSettings = {
+    { startSpeed = 300, endSpeed = 325, hazardsPerSection = 0.75, platformRise = 100, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 335, endSpeed = 360, hazardsPerSection = 1, platformRise = 108, gapCount = 0, gapWidth = 0 },
+    { startSpeed = 370, endSpeed = 395, hazardsPerSection = 1.25, platformRise = 116, gapCount = 1, gapWidth = 70 },
+    { startSpeed = 405, endSpeed = 430, hazardsPerSection = 1.5, platformRise = 122, gapCount = 1, gapWidth = 80 },
+    { startSpeed = 440, endSpeed = 465, hazardsPerSection = 1.75, platformRise = 128, gapCount = 2, gapWidth = 85 },
+}
+
 function Difficulty:init(zoneIndex, levelIndex)
     self.zoneIndex = zoneIndex
-    local source = levelIndex == 2 and indoorSettings or settings
+    local source = levelIndex == 2 and indoorSettings
+        or levelIndex == 3 and castleSettings
+        or settings
     for key, value in pairs(source[zoneIndex]) do
         self[key] = value
     end
 end
 
 function Difficulty.forZone(zoneIndex, levelIndex)
-    local worldCount = levelIndex == 2 and 5 or 4
+    local worldCount = levelIndex == 2 and 5 or levelIndex == 3 and 5 or 4
     return Difficulty:new(math.max(1, math.min(worldCount, zoneIndex)), levelIndex)
 end
 

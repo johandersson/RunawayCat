@@ -78,7 +78,9 @@ function Level:addSection(section)
     end
 
     local indoor = self.index == 2
-    local shouldAddMainHazard = indoor and (zoneIndex >= 3 or zoneSection % 2 == 1)
+    local castle = self.index == 3
+    local shouldAddMainHazard = castle
+        or indoor and (zoneIndex >= 3 or zoneSection % 2 == 1)
         or not indoor and zoneIndex >= 3
     if section < self.sectionCount and shouldAddMainHazard and not shouldAddGap then
         local kinds = {
@@ -91,14 +93,21 @@ function Level:addSection(section)
                 { "toy", 32, 27 }, { "spill", 44, 12 }, { "books", 38, 32 },
                 { "basket", 40, 34 }, { "mousetrap", 40, 16 },
             }
+        elseif castle then
+            kinds = {
+                { "barrel", 38, 34 }, { "shield", 34, 35 }, { "chains", 42, 17 },
+                { "spikes", 44, 18 }, { "treasure", 42, 32 },
+            }
         end
-        local choice = kinds[indoor and zoneIndex or ((section + zoneIndex) % #kinds) + 1]
+        local choice = kinds[(indoor or castle) and zoneIndex or ((section + zoneIndex) % #kinds) + 1]
         self:addHazard(x + 405, Config.groundY - choice[3], choice[2], choice[3], choice[1])
     end
 
-    if indoor and zoneIndex >= 4 and section < self.sectionCount and zoneSection >= 7 - zoneIndex then
+    if castle and zoneIndex >= 4 and section < self.sectionCount and zoneSection == 1 then
+        self:addHazard(x + 92, Config.groundY - 18, 40, 18, "spikes")
+    elseif indoor and zoneIndex >= 4 and section < self.sectionCount and zoneSection >= 7 - zoneIndex then
         self:addHazard(x + 92, Config.groundY - 22, 32, 22, "toy")
-    elseif not indoor and zoneIndex >= 3 and section % 2 == 0 then
+    elseif not indoor and not castle and zoneIndex >= 3 and section % 2 == 0 then
         self:addHazard(x + 92, Config.groundY - 18, 40, 18, "thorns")
     end
 

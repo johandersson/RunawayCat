@@ -60,9 +60,24 @@ local indoorDefinitions = {
         ground = { 0.53, 0.39, 0.30 }, dirt = { 0.27, 0.22, 0.21 }, accent = { 1.0, 0.84, 0.45 } },
 }
 
+local castleDefinitions = {
+    { name = "Slottsgården", area = "courtyard", skyTop = { 0.17, 0.19, 0.29 }, skyBottom = { 0.49, 0.43, 0.49 },
+        ground = { 0.42, 0.42, 0.47 }, dirt = { 0.25, 0.24, 0.29 }, accent = { 0.96, 0.70, 0.25 } },
+    { name = "Stora salen", area = "great_hall", skyTop = { 0.27, 0.12, 0.17 }, skyBottom = { 0.58, 0.34, 0.27 },
+        ground = { 0.49, 0.34, 0.28 }, dirt = { 0.27, 0.19, 0.18 }, accent = { 0.96, 0.77, 0.31 } },
+    { name = "Vapenhallen", area = "armory", skyTop = { 0.20, 0.22, 0.29 }, skyBottom = { 0.54, 0.54, 0.59 },
+        ground = { 0.48, 0.50, 0.55 }, dirt = { 0.25, 0.27, 0.31 }, accent = { 0.76, 0.86, 0.96 } },
+    { name = "Fängelsehålan", area = "dungeon", skyTop = { 0.08, 0.10, 0.15 }, skyBottom = { 0.25, 0.29, 0.34 },
+        ground = { 0.31, 0.35, 0.38 }, dirt = { 0.16, 0.19, 0.22 }, accent = { 0.55, 0.89, 0.74 } },
+    { name = "Skattkammaren", area = "treasury", skyTop = { 0.24, 0.13, 0.16 }, skyBottom = { 0.60, 0.39, 0.22 },
+        ground = { 0.52, 0.37, 0.22 }, dirt = { 0.29, 0.20, 0.16 }, accent = { 1.0, 0.79, 0.20 } },
+}
+
 function Zone.defaults(levelIndex)
     local zones = {}
-    local source = levelIndex == 2 and indoorDefinitions or definitions
+    local source = levelIndex == 2 and indoorDefinitions
+        or levelIndex == 3 and castleDefinitions
+        or definitions
     for i, definition in ipairs(source) do
         local copy = {}
         for key, value in pairs(definition) do

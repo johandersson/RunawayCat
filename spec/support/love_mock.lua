@@ -7,6 +7,7 @@ function LoveMock.install()
     local soundData = {
         setSample = noOp,
     }
+    local files = {}
 
     _G.love = {
         event = {
@@ -29,6 +30,21 @@ function LoveMock.install()
                     setVolume = function(self, volume) self.volume = volume end,
                     setPitch = function(self, pitch) self.pitch = pitch end,
                 }
+            end,
+        },
+        filesystem = {
+            getInfo = function(path)
+                return files[path] and { type = "file", size = #files[path] } or nil
+            end,
+            read = function(path)
+                if not files[path] then
+                    return nil, "File not found"
+                end
+                return files[path]
+            end,
+            write = function(path, contents)
+                files[path] = contents
+                return true
             end,
         },
         graphics = {
