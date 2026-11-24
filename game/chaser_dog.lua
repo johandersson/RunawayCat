@@ -19,20 +19,41 @@ function ChaserDog:reset(playerX, distance)
     self.running = false
     self.warned = false
     self.active = false
+    self.defeated = false
+    self.jumpTargetX = false
+    self.jumpOffset = 0
     self.escapes = rawget(self, "escapes") or 0
 end
 
-local function containingGap(gaps, x)
-    for _, gap in ipairs(gaps) do
-        if x > gap.x and x < gap.x + gap.width then
-            return gap
+local function containingObstacle(obstacles, x)
+    for _, obstacle in ipairs(obstacles) do
+        if x > obstacle.x and x < obstacle.x + obstacle.width then
+            return obstacle
         end
     end
 end
 
-function ChaserDog:update(dt, player, difficulty, gaps)
+local function jumpObstacles(gaps, hazards)
+    local obstacles = {}
+    for _, gap in ipairs(gaps) do
+        obstacles[#obstacles + 1] = gap
+    end
+    for _, hazard in ipairs(hazards) do
+        if hazard.kind ~= "dog" then
+            obstacles[#obstacles + 1] = { x = hazard.x, width = hazard.w }
+        end
+    end
+    return obstacles
+end
+
+function ChaserDog:update(dt, player, difficulty, gaps, hazards, random)
     gaps = gaps or {}
+    hazards = hazards or {}
+    random = random or math.random
     self.barkTimer = math.max(0, self.barkTimer - dt)
+    if self.defeated then
+        return false
+    end
     if player.x < 700 then
         self.running = false
         return false
@@ -44,7 +65,8 @@ function ChaserDog:update(dt, player, difficulty, gaps)
 
     self.running = true
     local speed = player.speed + difficulty.chaserCatchup
-    local centerGap = containingGap(gaps, self.x + self.w / 2)
+    local obstacles = jumpObstacles(gaps, hazards)
+    local centerGap = containingObstacle(gaps, self.x + self.w / 2)
     if self.onGround and centerGap then
         self.x = centerGap.x - self.w - 20
     end
@@ -52,12 +74,24 @@ function ChaserDog:update(dt, player, difficulty, gaps)
     if self.onGround then
         local front = self.x + self.w
         local jumpLead = math.max(45, speed * 0.08)
-        for _, gap in ipairs(gaps) do
-            local ahead = gap.x - front
-            if ahead >= 0 and ahead <= jumpLead then
+        for _, obstacle in ipairs(obstacles) do
+            local ahead = obstacle.x - front
+            if ahead >= 0 and (self.jumpTargetX == false or obstacle.x < self.jumpTargetX) then
+                if self.jumpTargetX ~= obstacle.x then
+                    self.jumpTargetX = obstacle.x
+                    self.jumpOffset = random(-10, 10)
+                end
+            end
+        end
+        if self.jumpTargetX then
+            local ahead = self.jumpTargetX - front
+            if ahead < -20 then
+                self.jumpTargetX = false
+            elseif ahead >= 0 and ahead <= jumpLead + self.jumpOffset then
+                self.jumpTargetX = false
+                self.jumpOffset = 0
                 self.vy = -780
                 self.onGround = false
-                break
             end
         end
     end
@@ -66,7 +100,7 @@ function ChaserDog:update(dt, player, difficulty, gaps)
     if not self.onGround then
         self.vy = self.vy + Config.gravity * dt
         self.y = self.y + self.vy * dt
-        local overGap = containingGap(gaps, self.x + self.w / 2)
+        local overGap = containingObstacle(gaps, self.x + self.w / 2)
         if self.y + self.h >= Config.groundY and not overGap then
             self.y = Config.groundY - self.h
             self.vy = 0
@@ -89,6 +123,22 @@ function ChaserDog:update(dt, player, difficulty, gaps)
         self.active = true
     end
     return false
+end
+
+function ChaserDog:isStompedBy(player, previousBottom)
+    if self.defeated or player.vy <= 0 then
+        return false
+    end
+    local hitbox = player:getHitbox()
+    local horizontal = hitbox.x + hitbox.w > self.x + 8 and hitbox.x < self.x + self.w - 8
+    local currentBottom = player.y + player.h
+    return horizontal and previousBottom <= self.y + 16 and currentBottom >= self.y
+end
+
+function ChaserDog:defeat()
+    self.defeated = true
+    self.running = false
+    self.barkTimer = 0
 end
 
 function ChaserDog:animation()

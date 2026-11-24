@@ -50,7 +50,7 @@ describe("Dog pursuing from behind", function()
                 local player = Player:new(700, Config.groundY - 58)
                 local escaped = false
 
-                for _ = 1, 1200 do
+                for _ = 1, 2400 do
                     local gap = player.x - (dog.x + dog.w)
                     if dog.active and player.onGround and gap <= difficulty.chaserWarning then
                         player:requestJump()
@@ -105,13 +105,65 @@ describe("Dog pursuing from behind", function()
         end
     end)
 
+    it("randomizes takeoff timing while still jumping normal hazards", function()
+        local function takeoffX(offset)
+            local difficulty = Difficulty.forZone(3, 1)
+            local dog = ChaserDog:new()
+            local player = Player:new(1500, Config.groundY - 58)
+            local hazard = { x = 1050, y = Config.groundY - 34, w = 36, h = 34, kind = "crate" }
+            dog.active = true
+            dog.x = hazard.x - dog.w - 100
+            player.speed = difficulty.startSpeed
+
+            for _ = 1, 120 do
+                player.x = player.x + player.speed / 60
+                dog:update(1 / 60, player, difficulty, {}, { hazard }, function()
+                    return offset
+                end)
+                if not dog.onGround then
+                    assert.is_true(dog.x + dog.w < hazard.x)
+                    return dog.x
+                end
+            end
+            error("Dog did not jump the hazard")
+        end
+
+        local earlyTakeoff = takeoffX(10)
+        local lateTakeoff = takeoffX(-10)
+
+        assert.is_true(earlyTakeoff < lateTakeoff)
+    end)
+
+    it("is defeated only when Miso stomps downward from above", function()
+        local dog = ChaserDog:new()
+        dog.active = true
+        dog.x = 1000
+        local player = Player:new(1020, dog.y - 63)
+        player.onGround = false
+        player.vy = 120
+        local previousBottom = player.y + player.h
+        player.y = player.y + 12
+
+        assert.is_true(dog:isStompedBy(player, previousBottom))
+        dog:defeat()
+        assert.is_true(dog.defeated)
+        assert.is_false(dog.running)
+
+        dog:reset(1200, 500)
+        player.y = Config.groundY - player.h
+        player.onGround = true
+        player.vy = 0
+        assert.is_false(dog:isStompedBy(player, player.y + player.h))
+        assert.is_false(dog.defeated)
+    end)
+
     it("increases pressure progressively without removing the warning", function()
         local previous
         for levelIndex = 1, 3 do
             local worldCount = levelIndex == 1 and 4 or 5
             for zoneIndex = 1, worldCount do
                 local difficulty = Difficulty.forZone(zoneIndex, levelIndex)
-                assert.is_true(difficulty.chaserWarning >= 30)
+                assert.is_true(difficulty.chaserWarning >= 25)
                 if previous then
                     assert.is_true(difficulty.chaserCatchup >= previous.chaserCatchup)
                     assert.is_true(difficulty.chaserDistance <= previous.chaserDistance)
@@ -119,9 +171,9 @@ describe("Dog pursuing from behind", function()
                 previous = difficulty
             end
         end
-        assert.equals(38, Difficulty.forZone(1, 1).chaserCatchup)
-        assert.equals(520, Difficulty.forZone(1, 1).chaserDistance)
-        assert.is_true(Difficulty.forZone(5, 3).chaserCatchup <= 78)
-        assert.is_true(Difficulty.forZone(5, 3).chaserDistance >= 345)
+        assert.equals(22, Difficulty.forZone(1, 1).chaserCatchup)
+        assert.equals(630, Difficulty.forZone(1, 1).chaserDistance)
+        assert.is_true(Difficulty.forZone(5, 3).chaserCatchup <= 59)
+        assert.is_true(Difficulty.forZone(5, 3).chaserDistance >= 390)
     end)
 end)

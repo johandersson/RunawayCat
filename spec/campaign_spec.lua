@@ -314,4 +314,23 @@ describe("Two-level campaign", function()
         assert.equals(2, app:getStatus().lives)
         assert.is_true(level.chaser.x < player.x)
     end)
+
+    it("defeats the pursuing dog and awards points for a downward stomp", function()
+        local level = assert(upvalue(App.update, "level"))
+        local player = assert(upvalue(App.update, "player"))
+        player.x = 800
+        level.chaser.active = true
+        level.chaser.x = player.x + 5
+        player.y = level.chaser.y - player.h - 4
+        player.vy = 300
+        player.onGround = false
+        local scoreBefore = app:getStatus().score
+
+        app:update(1 / 60)
+
+        assert.is_true(level.chaser.defeated)
+        assert.equals(3, app:getStatus().lives)
+        assert.equals(scoreBefore + 500, app:getStatus().score)
+        assert.is_true(player.vy < 0)
+    end)
 end)

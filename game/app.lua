@@ -382,14 +382,28 @@ local function updatePlaying(dt)
         message = "En hund vaktar! Hoppa över den!"
         messageTimer = 2
     end
-    if level.chaser and level.chaser:update(dt, player, difficulty, level.gaps) then
+    if level.chaser and level.chaser:update(
+        dt, player, difficulty, level.gaps, hazards, love.math.random
+    ) then
         playSound("bark")
         message = "Hunden kommer bakifrån! Hoppa!"
         messageTimer = 1.6
     end
-    if level.chaser and level.chaser:collidesWith(hitbox) then
-        killPlayer()
-        return
+    if level.chaser and not level.chaser.defeated then
+        if level.chaser:isStompedBy(player, previousBottom) then
+            level.chaser:defeat()
+            player.vy = -420
+            player.onGround = false
+            addScore(500)
+            addParticle(level.chaser.x + level.chaser.w / 2, level.chaser.y,
+                { 1.0, 0.76, 0.25 }, 24, 220)
+            playSound("win")
+            message = "Bra hopp! Hunden är besegrad!"
+            messageTimer = 2
+        elseif level.chaser:collidesWith(hitbox) then
+            killPlayer()
+            return
+        end
     end
     for _, hazard in ipairs(hazards) do
         if hazard:collidesWith(hitbox) then
@@ -1040,7 +1054,7 @@ local function drawGame()
             drawHazard(hazard)
         end
     end
-    if level.chaser and level.chaser.x - cameraX > -150
+    if level.chaser and not level.chaser.defeated and level.chaser.x - cameraX > -150
         and level.chaser.x - cameraX < GAME_WIDTH + 100 then
         drawHazard(level.chaser)
     end
