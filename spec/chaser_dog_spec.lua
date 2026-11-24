@@ -1,6 +1,7 @@
 local ChaserDog = require("game.chaser_dog")
 local Config = require("game.config")
 local Difficulty = require("game.difficulty")
+local Level = require("game.level")
 local Player = require("game.player")
 
 describe("Dog pursuing from behind", function()
@@ -74,6 +75,36 @@ describe("Dog pursuing from behind", function()
         end
     end)
 
+    it("jumps over generated gaps instead of floating or falling through them", function()
+        for _, dt in ipairs({ 1 / 60, 1 / 30 }) do
+            local level = Level:new(nil, 1):build()
+            local gap = assert(level.gaps[1])
+            local zoneIndex = math.floor(gap.x / Config.zoneWidth) + 1
+            local difficulty = level:getDifficulty(zoneIndex)
+            local dog = ChaserDog:new()
+            local player = Player:new(gap.x + 300, Config.groundY - 58)
+            dog.active = true
+            dog.x = gap.x - dog.w - 70
+            player.speed = difficulty.startSpeed
+            local becameAirborne = false
+            local landedBeyondGap = false
+
+            for _ = 1, 180 do
+                player.x = player.x + player.speed * dt
+                dog:update(dt, player, difficulty, { gap })
+                becameAirborne = becameAirborne or not dog.onGround
+                assert.is_true(dog.y + dog.h <= Config.groundY + 0.001)
+                if dog.onGround and dog.x + dog.w / 2 > gap.x + gap.width then
+                    landedBeyondGap = true
+                    break
+                end
+            end
+
+            assert.is_true(becameAirborne)
+            assert.is_true(landedBeyondGap)
+        end
+    end)
+
     it("increases pressure progressively without removing the warning", function()
         local previous
         for levelIndex = 1, 3 do
@@ -88,5 +119,9 @@ describe("Dog pursuing from behind", function()
                 previous = difficulty
             end
         end
+        assert.equals(38, Difficulty.forZone(1, 1).chaserCatchup)
+        assert.equals(520, Difficulty.forZone(1, 1).chaserDistance)
+        assert.is_true(Difficulty.forZone(5, 3).chaserCatchup <= 78)
+        assert.is_true(Difficulty.forZone(5, 3).chaserDistance >= 345)
     end)
 end)

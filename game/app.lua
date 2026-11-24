@@ -382,7 +382,7 @@ local function updatePlaying(dt)
         message = "En hund vaktar! Hoppa över den!"
         messageTimer = 2
     end
-    if level.chaser and level.chaser:update(dt, player, difficulty) then
+    if level.chaser and level.chaser:update(dt, player, difficulty, level.gaps) then
         playSound("bark")
         message = "Hunden kommer bakifrån! Hoppa!"
         messageTimer = 1.6

@@ -11,6 +11,9 @@ end
 
 function ChaserDog:reset(playerX, distance)
     self.x = (playerX or 105) - (distance or 500) - self.w
+    self.y = Config.groundY - self.h
+    self.vy = 0
+    self.onGround = true
     self.barkTimer = 0
     self.runTimer = 0
     self.running = false
@@ -19,7 +22,16 @@ function ChaserDog:reset(playerX, distance)
     self.escapes = rawget(self, "escapes") or 0
 end
 
-function ChaserDog:update(dt, player, difficulty)
+local function containingGap(gaps, x)
+    for _, gap in ipairs(gaps) do
+        if x > gap.x and x < gap.x + gap.width then
+            return gap
+        end
+    end
+end
+
+function ChaserDog:update(dt, player, difficulty, gaps)
+    gaps = gaps or {}
     self.barkTimer = math.max(0, self.barkTimer - dt)
     if player.x < 700 then
         self.running = false
@@ -31,7 +43,36 @@ function ChaserDog:update(dt, player, difficulty)
     end
 
     self.running = true
-    self.x = self.x + (player.speed + difficulty.chaserCatchup) * dt
+    local speed = player.speed + difficulty.chaserCatchup
+    local centerGap = containingGap(gaps, self.x + self.w / 2)
+    if self.onGround and centerGap then
+        self.x = centerGap.x - self.w - 20
+    end
+
+    if self.onGround then
+        local front = self.x + self.w
+        local jumpLead = math.max(45, speed * 0.08)
+        for _, gap in ipairs(gaps) do
+            local ahead = gap.x - front
+            if ahead >= 0 and ahead <= jumpLead then
+                self.vy = -780
+                self.onGround = false
+                break
+            end
+        end
+    end
+
+    self.x = self.x + speed * dt
+    if not self.onGround then
+        self.vy = self.vy + Config.gravity * dt
+        self.y = self.y + self.vy * dt
+        local overGap = containingGap(gaps, self.x + self.w / 2)
+        if self.y + self.h >= Config.groundY and not overGap then
+            self.y = Config.groundY - self.h
+            self.vy = 0
+            self.onGround = true
+        end
+    end
     self.runTimer = self.runTimer + dt * 10
     local gap = player.x - (self.x + self.w)
 
