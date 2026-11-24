@@ -4,7 +4,8 @@ local MusicPlayer = Class:extend()
 
 function MusicPlayer:init(source, volume)
     self.source = source
-    self.volume = volume or 0.32
+    self.defaultVolume = volume or 0.32
+    self.volume = self.defaultVolume
     self.pitch = 1
 end
 
@@ -19,10 +20,11 @@ function MusicPlayer:stop()
     self.source:stop()
 end
 
-function MusicPlayer:switch(source, pitch)
+function MusicPlayer:switch(source, pitch, volume)
     self:stop()
     self.source = source
     self.pitch = pitch or 1
+    self.volume = volume or self.defaultVolume
     self:play()
 end
 

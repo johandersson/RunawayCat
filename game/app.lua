@@ -25,6 +25,7 @@ local GAME_HEIGHT = Config.height
 local GROUND_Y = Config.groundY
 local LEVEL_END = Config.levelEnd
 local HOME_X = Config.homeX
+local MUSIC_VOLUMES = { 0.18, 1.00, 0.93 }
 
 local state = "title"
 local player
@@ -138,7 +139,7 @@ local function loadLevel(index)
     local source = assetCache:get("music:" .. path, function()
         return love.audio.newSource(path, "static")
     end)
-    music:switch(source, index == 2 and 0.90 or 1)
+    music:switch(source, index == 2 and 0.90 or 1, MUSIC_VOLUMES[index])
 end
 
 local function resetGame()
@@ -184,6 +185,9 @@ local function killPlayer()
     messageTimer = 2
     if level.dog then
         level.dog:reset()
+    end
+    if level.chaser then
+        level.chaser:reset(checkpointX, level:getDifficulty(zoneIndex).chaserDistance)
     end
 end
 
@@ -232,7 +236,7 @@ function App:load()
     local musicSource = assetCache:get("music:assets/music/retro-run.wav", function()
         return love.audio.newSource("assets/music/retro-run.wav", "static")
     end)
-    music = MusicPlayer:new(musicSource, 0.28)
+    music = MusicPlayer:new(musicSource, MUSIC_VOLUMES[1])
 
     for i = 1, 12 do
         table.insert(clouds, {
@@ -378,6 +382,15 @@ local function updatePlaying(dt)
         message = "En hund vaktar! Hoppa över den!"
         messageTimer = 2
     end
+    if level.chaser and level.chaser:update(dt, player, difficulty) then
+        playSound("bark")
+        message = "Hunden kommer bakifrån! Hoppa!"
+        messageTimer = 1.6
+    end
+    if level.chaser and level.chaser:collidesWith(hitbox) then
+        killPlayer()
+        return
+    end
     for _, hazard in ipairs(hazards) do
         if hazard:collidesWith(hitbox) then
             killPlayer()
@@ -457,6 +470,7 @@ function App:getStatus()
         highScore = highScore,
         lives = lives:remaining(),
         castleUnlocked = castleUnlock:isUnlocked(),
+        chaserGap = level.chaser and player.x - (level.chaser.x + level.chaser.w) or nil,
     }
 end
 
@@ -739,9 +753,11 @@ local function renderHazardSprite(hazard)
 end
 
 local function drawHazard(hazard)
-    if hazard.kind == "dog" then
+    if hazard.kind == "dog" or hazard.kind == "chaser_dog" then
         dogSprite:draw(hazard, cameraX)
-        if hazard.barkTimer > 2.6 and not hazard.passed then
+        local barking = hazard.kind == "dog" and hazard.barkTimer > 2.6 and not hazard.passed
+            or hazard.kind == "chaser_dog" and hazard.barkTimer > 0
+        if barking then
             love.graphics.setFont(fonts.small)
             love.graphics.setColor(1, 0.91, 0.66)
             love.graphics.print("VOFF!", hazard.x - cameraX + 5, hazard.y - 32)
@@ -1023,6 +1039,10 @@ local function drawGame()
         if hazard.x - cameraX > -100 and hazard.x - cameraX < GAME_WIDTH + 100 then
             drawHazard(hazard)
         end
+    end
+    if level.chaser and level.chaser.x - cameraX > -150
+        and level.chaser.x - cameraX < GAME_WIDTH + 100 then
+        drawHazard(level.chaser)
     end
     drawFinish()
     drawHomeAndFamily()

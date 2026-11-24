@@ -70,4 +70,17 @@ describe("MusicPlayer", function()
 
         assert.equals(1, source.pitch)
     end)
+
+    it("supports safe per-track volume normalization", function()
+        local music = MusicPlayer:new(source, 0.18)
+        local quieterTrack = {
+            setLooping = source.setLooping, setVolume = source.setVolume,
+            setPitch = source.setPitch, play = source.play, stop = source.stop,
+        }
+
+        music:switch(quieterTrack, 1, 0.93)
+
+        assert.equals(0.93, quieterTrack.volume)
+        assert.equals(0.93, music.volume)
+    end)
 end)

@@ -1,5 +1,6 @@
 local Cache = require("game.cache")
 local Dog = require("game.dog")
+local ChaserDog = require("game.chaser_dog")
 local DogSprite = require("game.dog_sprite")
 local Player = require("game.player")
 local LoveMock = require("spec.support.love_mock")
@@ -40,5 +41,18 @@ describe("Licensed animated dog sprite", function()
         sprite:draw(dog, 0)
         assert.is_true(draws[3].image ~= draws[4].image)
         assert.is_true(draws[4].sx > 0 and draws[4].sy > 0)
+    end)
+
+    it("flips the pursuing dog to face right", function()
+        local draw
+        love.graphics.draw = function(image, x, y, rotation, sx, sy)
+            draw = { image = image, sx = sx, sy = sy }
+        end
+        local sprite = DogSprite:new(love.graphics, Cache:new())
+
+        sprite:draw(ChaserDog:new(), 0)
+
+        assert.matches("Shepherd_default", draw.image.path)
+        assert.is_true(draw.sx < 0 and draw.sy > 0)
     end)
 end)

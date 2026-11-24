@@ -69,13 +69,17 @@ The unlock is stored in LÖVE's save directory, so it remains available after re
 
 A large German Shepherd runs toward Miso near the finish of **every level**. At 120 by 85 pixels, it is larger than Miso's 66 by 58-pixel body. It starts running when Miso approaches and stops attacking once he clears it. Jump a little earlier than for small stationary obstacles to pass it; being caught costs a life, just like other hazards.
 
+Another German Shepherd pursues Miso **from behind** after the opening stretch of every level. It stays outside the camera at first, then catches up and barks shortly before reaching him. Jump on the warning to let it lunge underneath Miso; after a successful escape, it falls back and begins another pursuit. Grounded contact costs a life and resets the chase behind the current checkpoint.
+
+The pursuit becomes progressively harder without becoming unavoidable: each successive world slightly increases the dog's catch-up speed and shortens its fallback distance. Level 1 provides the longest recovery time, the indoor level applies more pressure, and the castle treasury has the fastest chase. The warning timing is adjusted for each speed so a well-timed jump works at both 30 and 60 updates per second.
+
 The dog's idle, five-frame running and three-frame barking animations are **German Shepherd** by Shepardskin on OpenGameArt (CC0 1.0). The sprite faces Miso and its decoded images are cached. Its bark is a real recording from **Dog sounds** by Pauliuw on OpenGameArt (CC0 1.0), cached at volume 0.55 with a three-second repeat cooldown.
 
 After finishing the final available level, Miso has a final family hug. Both victory and game-over show an encouraging dialog with the score and best score for the current game session. The game stays on this dialog until you explicitly choose Restart or Exit. Restarting begins a fresh run at Level 1.
 
-The outdoor retro music is “Level 1” from **5 Chiptunes (Action)** by Juhani Junkala / SubspaceAudio (CC0 1.0). The indoor music is “bgm_menu” from **8-bit Music Pack (Loopable)** by CodeManu on OpenGameArt (CC BY 3.0), played at 90% speed for a gentler feel. The castle uses the loopable **8-Bit Curious Theme** by emanresU (CC0 1.0), a FamiStudio chiptune with a playfully mysterious feel. Music switches automatically between levels and when restarting. All tracks are cached in memory and loop.
+The outdoor retro music is “Level 1” from **5 Chiptunes (Action)** by Juhani Junkala / SubspaceAudio (CC0 1.0). The indoor music is “bgm_menu” from **8-bit Music Pack (Loopable)** by CodeManu on OpenGameArt (CC BY 3.0), played at 90% speed for a gentler feel. The castle uses the loopable **8-Bit Curious Theme** by emanresU (CC0 1.0), a FamiStudio chiptune with a playfully mysterious feel. Music switches automatically between levels and when restarting. All tracks are cached, looped, and assigned safe per-track gains to keep perceived loudness close to −22 LUFS across the campaign without clipping.
 
-The cat sound is “Meow of a Siamese cat” by freemaster2 (CC0 1.0). Miso meows only when losing a life, including the final life. It never plays on food pickups or protected collisions. The volume is 0.60 (six times the previous 0.10); music remains at 0.28. Every lost life triggers the meow, without randomness or a cooldown.
+The cat sound is “Meow of a Siamese cat” by freemaster2 (CC0 1.0). Miso meows only when losing a life, including the final life. It never plays on food pickups or protected collisions. The volume is 0.60. Every lost life triggers the meow, without randomness or a cooldown.
 
 The unlock dialog uses the old-style `MoneyBag.png` sprite from the **Ninja Adventure Asset Pack** by Pixel-Boy and AAA (CC0 1.0), enlarged with nearest-neighbor filtering.
 
@@ -94,7 +98,7 @@ The game code is organized into testable classes under `game/`:
 - `Player`, `Level`, `Difficulty`, and `Zone` control the player and progression.
 - All three levels reuse the same generator and gameplay; `Interior` and `Castle` draw cached scenery panels for their five-part environments.
 - `Platform`, `Hazard`, `Food`, and `Particle` represent game objects.
-- `Dog` extends shared hazard collision behavior with a run toward Miso and a bark cooldown; `DogSprite` draws cached, freely licensed animation frames.
+- `Dog` guards each finish from ahead, while `ChaserDog` repeatedly pressures Miso from behind with progressive catch-up settings. `DogSprite` draws both directions from the same cached, freely licensed animation frames.
 - `CastleUnlock` owns the strict score requirement and persistent unlock, while `UnlockDialog` and `ResultDialog` handle explicit choices.
 - `Class`, `Config`, and `Util` provide shared infrastructure.
 - `Cache` provides functional memoization, while `RenderCache` rasterizes reusable graphics to canvases only once.

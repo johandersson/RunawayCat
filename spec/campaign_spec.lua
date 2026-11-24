@@ -113,6 +113,7 @@ describe("Two-level campaign", function()
         local music = assert(upvalue(App.update, "music"))
         assert.equals("assets/music/castle-mystery.ogg", music.source.path)
         assert.equals(1, music.source.pitch)
+        assert.equals(0.93, music.source.volume)
 
         local player = assert(upvalue(App.update, "player"))
         for area = 1, 5 do
@@ -162,6 +163,7 @@ describe("Two-level campaign", function()
         local music = assert(upvalue(App.update, "music"))
         local outdoor = music.source
         assert.equals("assets/music/retro-run.wav", outdoor.path)
+        assert.equals(0.18, outdoor.volume)
 
         completeLevel(app)
         local indoor = music.source
@@ -169,6 +171,7 @@ describe("Two-level campaign", function()
         assert.is_false(outdoor.playing)
         assert.is_true(indoor.playing)
         assert.equals(0.90, indoor.pitch)
+        assert.equals(1.00, indoor.volume)
 
         completeLevel(app)
         app:keypressed("r")
@@ -176,6 +179,7 @@ describe("Two-level campaign", function()
         assert.is_false(indoor.playing)
         assert.is_true(outdoor.playing)
         assert.equals(1, outdoor.pitch)
+        assert.equals(0.18, outdoor.volume)
     end)
 
     it("keeps the final result visible until restart or exit is chosen", function()
@@ -294,5 +298,20 @@ describe("Two-level campaign", function()
             assert.is_true(level.dog.x < beforeX)
             assert.has_no.errors(function() app:draw() end)
         end
+    end)
+
+    it("loses a life when the pursuing dog catches Miso from behind", function()
+        local level = assert(upvalue(App.update, "level"))
+        local player = assert(upvalue(App.update, "player"))
+        player.x = 800
+        player.y = 590 - player.h
+        player.invulnerable = 0
+        level.chaser.active = true
+        level.chaser.x = player.x - 30
+
+        app:update(1 / 60)
+
+        assert.equals(2, app:getStatus().lives)
+        assert.is_true(level.chaser.x < player.x)
     end)
 end)

@@ -25,7 +25,11 @@ function DogSprite:draw(dog, cameraX)
     local scale = dog.h / 17
     self.graphics.setColor(1, 1, 1)
     -- The source faces left; align its opaque x=2..25, y=1..17 bounds.
-    self.graphics.draw(image, dog.x - cameraX, dog.y, 0, scale, scale, 2, 1)
+    if rawget(dog, "facingRight") then
+        self.graphics.draw(image, dog.x - cameraX + dog.w, dog.y, 0, -scale, scale, 2, 1)
+    else
+        self.graphics.draw(image, dog.x - cameraX, dog.y, 0, scale, scale, 2, 1)
+    end
 end
 
 return DogSprite

@@ -1,4 +1,5 @@
 local Class = require("game.class")
+local ChaserDog = require("game.chaser_dog")
 local Config = require("game.config")
 local Difficulty = require("game.difficulty")
 local Dog = require("game.dog")
@@ -21,6 +22,7 @@ function Level:init(random, index)
     self.foods = {}
     self.gaps = {}
     self.dog = false
+    self.chaser = false
 end
 
 function Level:getDifficulty(zoneIndex)
@@ -120,6 +122,7 @@ function Level:build()
     self.foods = {}
     self.gaps = {}
     self.dog = false
+    self.chaser = false
 
     for section = 0, self.sectionCount do
         self:addSection(section)
@@ -130,6 +133,7 @@ function Level:build()
     self:addFood(self.finishX - 120, Config.groundY - 90, "milk")
     self:addFood(self.finishX - 60, Config.groundY - 65, "cake")
     self.dog = Dog:new(self.finishX - 220)
+    self.chaser = ChaserDog:new()
     table.insert(self.hazards, self.dog)
     return self
 end
