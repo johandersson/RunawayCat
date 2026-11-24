@@ -23,4 +23,15 @@ describe("LÖVE application harness", function()
             love.draw()
         end)
     end)
+
+    it("starts in borderless desktop fullscreen", function()
+        dofile("conf.lua")
+        local config = { window = {} }
+
+        love.conf(config)
+
+        assert.is_true(config.window.fullscreen)
+        assert.equals("desktop", config.window.fullscreentype)
+        assert.is_true(config.window.borderless)
+    end)
 end)

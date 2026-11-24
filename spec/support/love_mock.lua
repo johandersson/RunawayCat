@@ -88,6 +88,11 @@ function LoveMock.install()
             setLineWidth = noOp,
             translate = noOp,
         },
+        keyboard = {
+            isDown = function()
+                return false
+            end,
+        },
         math = {
             random = function(minimum, maximum)
                 if minimum and maximum then

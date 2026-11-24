@@ -11,11 +11,14 @@ A colorful 2D platform game for [LÖVE](https://love2d.org/) in which Miso the c
    love .
    ```
 
+The game starts in borderless desktop fullscreen, without the Windows title bar or system window buttons. Its 16:9 game view is centered and letterboxed when the display uses another aspect ratio.
+
 ## Controls
 
 - **Space**, **W**, **up arrow**, or **left mouse button**: jump
 - Release the jump button early for a shorter jump
 - **P** or **Esc**: pause/resume
+- **Ctrl+Esc**: open a confirmation dialog before quitting
 - **R**: restart after winning or getting a game over
 - On the results dialog, click **Spela igen** (Restart) or **Avsluta** (Exit), or select with **left/right arrows** or **Tab** and confirm with **Enter**. **Esc** exits.
 - Jump keys and clicks outside the dialog buttons never restart a finished run.

@@ -333,4 +333,48 @@ describe("Two-level campaign", function()
         assert.equals(scoreBefore + 500, app:getStatus().score)
         assert.is_true(player.vy < 0)
     end)
+
+    it("asks for confirmation before Ctrl+Escape quits", function()
+        love.keyboard.isDown = function(key)
+            return key == "lctrl"
+        end
+
+        app:keypressed("escape")
+
+        assert.equals("quit_confirm", app:getStatus().state)
+        assert.is_false(love.event.quitRequested)
+        assert.has_no.errors(function() app:draw() end)
+    end)
+
+    it("restores play when the default quit choice is confirmed", function()
+        love.keyboard.isDown = function(key)
+            return key == "rctrl"
+        end
+        app:keypressed("escape")
+        love.keyboard.isDown = function()
+            return false
+        end
+
+        app:keypressed("return")
+
+        assert.equals("playing", app:getStatus().state)
+        assert.is_false(love.event.quitRequested)
+    end)
+
+    it("quits only after explicitly selecting yes", function()
+        local music = assert(upvalue(App.update, "music"))
+        love.keyboard.isDown = function(key)
+            return key == "lctrl"
+        end
+        app:keypressed("escape")
+        love.keyboard.isDown = function()
+            return false
+        end
+
+        app:keypressed("left")
+        app:keypressed("return")
+
+        assert.is_true(love.event.quitRequested)
+        assert.is_false(music.source.playing)
+    end)
 end)

@@ -12,6 +12,7 @@ local MeowPlayer = require("game.meow_player")
 local MusicPlayer = require("game.music_player")
 local Particle = require("game.particle")
 local Player = require("game.player")
+local QuitDialog = require("game.quit_dialog")
 local RenderCache = require("game.render_cache")
 local ResultDialog = require("game.result_dialog")
 local UnlockDialog = require("game.unlock_dialog")
@@ -57,6 +58,8 @@ local castleUnlock
 local dogSprite
 local resultDialog
 local unlockDialog
+local quitDialog
+local stateBeforeQuit
 local moneyBag
 local assetCache = Cache:new()
 
@@ -273,7 +276,35 @@ local function unlockAction(action)
     end
 end
 
+local function quitAction(action)
+    if action == "quit" then
+        music:stop()
+        love.event.quit()
+    elseif action == "cancel" then
+        state = stateBeforeQuit
+        stateBeforeQuit = nil
+        quitDialog = nil
+    end
+end
+
 function App:keypressed(key, _, isrepeat)
+    local controlDown = love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")
+    if key == "escape" and controlDown then
+        if state == "quit_confirm" then
+            quitAction("cancel")
+        elseif not isrepeat then
+            stateBeforeQuit = state
+            state = "quit_confirm"
+            quitDialog = QuitDialog:new()
+        end
+        return
+    end
+    if state == "quit_confirm" then
+        if not isrepeat then
+            quitAction(quitDialog:keypressed(key))
+        end
+        return
+    end
     if state == "castle_unlock" then
         if not isrepeat then
             unlockAction(unlockDialog:keypressed(key))
@@ -307,12 +338,15 @@ end
 
 function App:mousepressed(x, y, button)
     if button == 1 then
-        if state == "castle_unlock" or state == "gameover" or state == "won" then
+        if state == "quit_confirm" or state == "castle_unlock"
+            or state == "gameover" or state == "won" then
             local width, height = love.graphics.getDimensions()
             local scale = math.min(width / GAME_WIDTH, height / GAME_HEIGHT)
             local logicalX = (x - (width - GAME_WIDTH * scale) / 2) / scale
             local logicalY = (y - (height - GAME_HEIGHT * scale) / 2) / scale
-            if state == "castle_unlock" then
+            if state == "quit_confirm" then
+                quitAction(quitDialog:mousepressed(logicalX, logicalY))
+            elseif state == "castle_unlock" then
                 unlockAction(unlockDialog:mousepressed(logicalX, logicalY))
             else
                 resultAction(resultDialog:mousepressed(logicalX, logicalY))
@@ -1031,6 +1065,35 @@ local function drawCastleUnlock()
         260, 585, 760, "center")
 end
 
+local function drawQuitConfirmation()
+    love.graphics.setColor(0.02, 0.03, 0.08, 0.82)
+    love.graphics.rectangle("fill", 0, 0, GAME_WIDTH, GAME_HEIGHT)
+    love.graphics.setColor(0.14, 0.15, 0.22)
+    love.graphics.rectangle("fill", 260, 155, 760, 420, 24, 24)
+    love.graphics.setColor(0.95, 0.67, 0.27)
+    love.graphics.setLineWidth(5)
+    love.graphics.rectangle("line", 260, 155, 760, 420, 24, 24)
+    love.graphics.setFont(fonts.large)
+    love.graphics.setColor(1.0, 0.82, 0.40)
+    love.graphics.printf("AVSLUTA SPELET?", 300, 205, 680, "center")
+    love.graphics.setFont(fonts.medium)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf("Är du säker på att du vill avsluta?", 300, 315, 680, "center")
+
+    for _, button in ipairs(quitDialog.buttons) do
+        local selected = quitDialog.selected == button.action
+        love.graphics.setColor(selected and 0.96 or 0.25, selected and 0.70 or 0.28, selected and 0.28 or 0.38)
+        love.graphics.rectangle("fill", button.x, button.y, button.w, button.h, 14, 14)
+        love.graphics.setColor(selected and 0.12 or 1, selected and 0.11 or 1, selected and 0.16 or 1)
+        love.graphics.setFont(fonts.medium)
+        love.graphics.printf(button.label, button.x, button.y + 14, button.w, "center")
+    end
+    love.graphics.setFont(fonts.small)
+    love.graphics.setColor(1, 1, 1, 0.82)
+    love.graphics.printf("Nej är förvalt. Välj med ← / → och bekräfta med Enter.",
+        300, 525, 680, "center")
+end
+
 local function drawGame()
     local zone = currentZoneAt(player.x)
     drawSky(zone)
@@ -1096,6 +1159,8 @@ local function drawGame()
         drawOverlay("PAUS", "Miso tar en liten kattlur.", "Tryck P eller Esc för att fortsätta", { 0.45, 0.84, 1.0 })
     elseif state == "castle_unlock" then
         drawCastleUnlock()
+    elseif state == "quit_confirm" then
+        drawQuitConfirmation()
     elseif state == "gameover" or state == "won" then
         drawResults()
     end
